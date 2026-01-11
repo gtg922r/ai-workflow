@@ -1,0 +1,15 @@
+description = "Compare multiple GitHub PRs and recommend the best one."
+prompt = """
+As a senior software architect and engineer I'd like for you to review PRs {{args}} to this repo (at origin) - different implementations of the same feature/desired change.
+
+Produce a clean and well formatted summary comparing and contrasting them.
+Evaluate them for concepts like:
+- How elegant and idiomatic they are.
+- How well architected they are.
+- How well they accomplish the intended goal.
+- Which are "best" from an overall engineering excellence standpoint.
+
+Finish with your recommendation of which PR to accept, and any feedback to provide to that PR based on any ideas/improvements gleaned from the other PRs.
+
+Start by fetching the details and diffs for these PRs using the `gh` CLI (e.g. `gh pr view <id>`, `gh pr diff <id>`).
+"""

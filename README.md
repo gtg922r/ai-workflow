@@ -19,7 +19,7 @@ Refer to `AGENTS.md` for detailed operational context and guidelines on how AI a
 
 ### Gemini
 - **Workflow**
-  - `compare-PRs`: Compares multiple conflicting PRs for the same feature and outputs a decision report.
+  - `compare-prs`: Compare multiple GitHub PRs and recommend the best one.
 
 
 
