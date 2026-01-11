@@ -109,7 +109,15 @@ Scripts must:
 - Avoid destructive operations by default
 - Document dependencies (and provide a no-script fallback in instructions)
 
-### 7) Provider-specific packaging and install guidance
+### 7) Validate the skill
+
+Run the `validate_skill.py` script provided in this skill's `scripts/` directory against the newly created skill folder:
+
+`python3 skills/skill-creator/scripts/validate_skill.py <path-to-new-skill>`
+
+Fix any errors reported by the tool before proceeding.
+
+### 8) Provider-specific packaging and install guidance
 
 After writing the skill, include installation instructions for:
 
@@ -128,6 +136,7 @@ Use `references/PROVIDERS.md` as the source of truth and keep the `SKILL.md` sum
 - Long details are moved to `references/` (progressive disclosure)
 - File references use relative paths and stay shallow
 - Provider differences and install instructions are correct and clearly separated
+- The skill passes `skills/skill-creator/scripts/validate_skill.py` without errors
 
 ## References
 
