@@ -12,3 +12,13 @@ This repository serves as a centralized hub for personal AI agent workflows, too
 ## Usage
 
 Refer to `AGENTS.md` for detailed operational context and guidelines on how AI agents should interact with this repository.
+
+## Available Commands
+
+### Gemini
+- **Workflow**
+  - `compare-PRs`: Compares multiple conflicting PRs for the same feature and outputs a decision report.
+
+
+
+
