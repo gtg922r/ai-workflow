@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from typing import Optional
 
 # Ensure local packages (agents/, core/) are importable when run from anywhere
 _script_dir = Path(__file__).parent.resolve()
@@ -54,7 +55,7 @@ from core.prd import PRD, Story
 from core.runner import RunnerConfig, RunnerState
 
 
-class ConfigScreen(ModalScreen[RunnerConfig | None]):
+class ConfigScreen(ModalScreen[Optional[RunnerConfig]]):
     """Configuration screen for setting up the runner."""
 
     CSS = """
