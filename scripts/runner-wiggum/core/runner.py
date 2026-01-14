@@ -11,8 +11,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from ..agents.base import AgentBackend, AgentConfig, AgentResult, AgentType
-from ..agents.claude import ClaudeAgent
-from ..agents.cursor import CursorAgent
+from ..agents.registry import create_agent, list_available_agents
 from .prd import PRD, Story
 from .progress import ProgressLogger, RunRecord
 
@@ -126,10 +125,7 @@ class Runner:
                 timeout_seconds=self.config.timeout_seconds,
             )
 
-            if self.config.agent_type == AgentType.CLAUDE:
-                self.agent = ClaudeAgent(agent_config)
-            else:
-                self.agent = CursorAgent(agent_config)
+            self.agent = create_agent(self.config.agent_type, agent_config)
 
             if not self.agent.is_available():
                 self.stats.errors.append(
@@ -145,15 +141,7 @@ class Runner:
 
     def _build_prompt(self, story: Story | None) -> str:
         """Build the prompt for the agent."""
-        # Load template if specified
-        template_path = self.config.prompt_template_path or (
-            self.config.project_path / "prompt.md"
-        )
-
-        if template_path.exists():
-            template = template_path.read_text()
-        else:
-            template = self._default_prompt_template()
+        template = self._load_prompt_template()
 
         # Build context
         progress_content = ""
@@ -189,39 +177,22 @@ Progress: {self.prd.completed_stories}/{self.prd.total_stories} stories complete
 
         return prompt
 
-    def _default_prompt_template(self) -> str:
-        """Return the default prompt template."""
-        return """# Ralph Wiggum Agent Task
+    def _load_prompt_template(self) -> str:
+        """Load the prompt template from project or default location."""
+        # First preference: project root prompt.md
+        template_path = self.config.prompt_template_path or (
+            self.config.project_path / "prompt.md"
+        )
+        if template_path.exists():
+            return template_path.read_text()
 
-You are an autonomous development agent working through a PRD (Product Requirements Document).
+        # Fallback: bundled template in runner-wiggum/templates
+        bundled_template = Path(__file__).resolve().parents[1] / "templates" / "prompt.md"
+        if bundled_template.exists():
+            return bundled_template.read_text()
 
-{{PRD_STATUS}}
-
-{{STORY}}
-
-## Previous Progress
-
-{{PROGRESS}}
-
-## Instructions
-
-1. Read and understand the current story requirements
-2. Implement the story according to the acceptance criteria
-3. Run any relevant tests to verify your implementation
-4. If all acceptance criteria are met, the story is complete
-5. If you encounter blockers, document them clearly
-
-## Completion Signal
-
-When the current story is complete and all acceptance criteria pass, include this exact text in your response:
-```
-<promise>COMPLETE</promise>
-```
-
-If all stories in the PRD are complete, also signal completion.
-
-Begin working on the current story now.
-"""
+        # Final fallback: minimal safe template
+        return "{{PRD_STATUS}}\n\n{{STORY}}\n\n{{PROGRESS}}\n"
 
     async def run(self) -> None:
         """Run the main agent loop."""
@@ -339,19 +310,5 @@ Begin working on the current story now.
 
     def get_available_agents(self) -> list[tuple[AgentType, bool, str | None]]:
         """Get list of agents with availability status."""
-        results = []
-
-        for agent_type in AgentType:
-            config = AgentConfig(working_dir=self.config.project_path)
-
-            if agent_type == AgentType.CLAUDE:
-                agent = ClaudeAgent(config)
-            else:
-                agent = CursorAgent(config)
-
-            available = agent.is_available()
-            version = agent.get_version() if available else None
-            results.append((agent_type, available, version))
-
-        return results
+        return list_available_agents(self.config.project_path)
 

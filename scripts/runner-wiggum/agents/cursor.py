@@ -7,7 +7,6 @@ See: https://cursor.com/changelog/cli-jan-08-2026
 
 from __future__ import annotations
 
-import asyncio
 import shutil
 from pathlib import Path
 
@@ -118,45 +117,17 @@ class CursorAgent(AgentBackend):
         env = os.environ.copy()
         # CURSOR_API_KEY should already be set in environment
 
-        try:
-            process = await asyncio.create_subprocess_exec(
-                *cmd,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.STDOUT,
-                cwd=self.config.working_dir,
-                env=env,
-            )
-
-            try:
-                stdout, _ = await asyncio.wait_for(
-                    process.communicate(),
-                    timeout=self.config.timeout_seconds,
-                )
-                output = stdout.decode("utf-8", errors="replace")
-                exit_code = process.returncode or 0
-            except asyncio.TimeoutError:
-                process.kill()
-                await process.wait()
-                return AgentResult(
-                    success=False,
-                    output="",
-                    exit_code=-1,
-                    error=f"Timeout after {self.config.timeout_seconds}s",
-                )
-
-        except FileNotFoundError:
+        output, exit_code, error = await self._run_subprocess(
+            cmd,
+            cli_label="Cursor CLI",
+            env=env,
+        )
+        if error:
             return AgentResult(
                 success=False,
-                output="",
-                exit_code=-1,
-                error="Cursor CLI executable not found",
-            )
-        except Exception as e:
-            return AgentResult(
-                success=False,
-                output="",
-                exit_code=-1,
-                error=str(e),
+                output=output,
+                exit_code=exit_code,
+                error=error,
             )
 
         return self.parse_output(output, exit_code)

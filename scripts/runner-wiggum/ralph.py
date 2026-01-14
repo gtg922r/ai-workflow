@@ -22,7 +22,6 @@ from textual.widgets import (
     Input,
     Label,
     Log,
-    OptionList,
     ProgressBar,
     RadioButton,
     RadioSet,
@@ -30,11 +29,11 @@ from textual.widgets import (
     Static,
     Switch,
 )
-from textual.widgets.option_list import Option
 
 from agents.base import AgentResult, AgentType
+from core.controller import RunnerCallbacks, RunnerController
 from core.prd import PRD, Story
-from core.runner import Runner, RunnerConfig, RunnerState
+from core.runner import RunnerConfig, RunnerState
 
 
 class ConfigScreen(ModalScreen[RunnerConfig | None]):
@@ -316,7 +315,7 @@ class RalphApp(App):
     def __init__(self, project_path: Path | None = None):
         super().__init__()
         self.project_path = project_path or Path.cwd()
-        self.runner: Runner | None = None
+        self.controller = RunnerController(self.project_path)
         self.config: RunnerConfig | None = None
         self._run_task: asyncio.Task | None = None
         self._current_story: Story | None = None
@@ -423,10 +422,10 @@ class RalphApp(App):
 
     def _update_stats_display(self) -> None:
         """Update the stats display."""
-        if not self.runner:
+        if not self.controller.runner:
             return
 
-        stats = self.runner.stats
+        stats = self.controller.runner.stats
 
         iterations = self.query_one("#iterations", Static)
         iterations.update(f"{stats.iterations_completed} / {self.config.max_iterations if self.config else 0}")
@@ -486,25 +485,13 @@ class RalphApp(App):
 
     async def _run_agent(self) -> None:
         """Run the agent loop."""
-        if not self.runner:
-            return
-
-        self.runner.set_callbacks(
-            on_state_change=self._on_runner_state_change,
-            on_iteration_start=self._on_iteration_start,
-            on_iteration_end=self._on_iteration_end,
-            on_output=self._on_output,
-        )
-
-        await self.runner.run()
+        await self.controller.run()
 
     @on(Button.Pressed, "#start-btn")
     async def action_start(self) -> None:
         """Start the agent runner."""
         # Get available agents
-        temp_config = RunnerConfig(project_path=self.project_path)
-        temp_runner = Runner(temp_config)
-        available_agents = temp_runner.get_available_agents()
+        available_agents = self.controller.get_available_agents()
 
         # Show config screen
         config = await self.push_screen_wait(
@@ -521,7 +508,15 @@ class RalphApp(App):
         agent_name.update(config.agent_type.value.title())
 
         # Create and start runner
-        self.runner = Runner(config)
+        self.controller.set_callbacks(
+            RunnerCallbacks(
+                on_state_change=self._on_runner_state_change,
+                on_iteration_start=self._on_iteration_start,
+                on_iteration_end=self._on_iteration_end,
+                on_output=self._on_output,
+            )
+        )
+        self.controller.configure(config)
         self._history.clear()
         self._update_history_display()
 
@@ -535,16 +530,16 @@ class RalphApp(App):
     @on(Button.Pressed, "#pause-btn")
     def action_pause(self) -> None:
         """Pause the agent runner."""
-        if self.runner:
-            self.runner.stop()
+        if self.controller.runner:
+            self.controller.stop()
             log = self.query_one("#output-log", Log)
             log.write_line("[yellow]Pause requested...[/]")
 
     @on(Button.Pressed, "#restart-btn")
     async def action_restart(self) -> None:
         """Restart the agent runner."""
-        if self.runner:
-            self.runner.reset()
+        if self.controller.runner:
+            self.controller.reset()
             self._history.clear()
             self._update_history_display()
 
@@ -558,9 +553,7 @@ class RalphApp(App):
     async def action_configure(self) -> None:
         """Open configuration screen."""
         # Get available agents
-        temp_config = RunnerConfig(project_path=self.project_path)
-        temp_runner = Runner(temp_config)
-        available_agents = temp_runner.get_available_agents()
+        available_agents = self.controller.get_available_agents()
 
         config = await self.push_screen_wait(
             ConfigScreen(self.project_path, available_agents)
