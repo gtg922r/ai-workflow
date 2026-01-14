@@ -1,6 +1,6 @@
 #!/usr/bin/env -S uv run
 # /// script
-# requires-python = ">=3.9"
+# requires-python = ">=3.11"
 # dependencies = [
 #     "textual>=0.47.0",
 #     "rich>=13.0.0",
@@ -19,7 +19,6 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from typing import Optional
 
 # Ensure local packages (agents/, core/) are importable when run from anywhere
 _script_dir = Path(__file__).parent.resolve()
@@ -55,7 +54,7 @@ from core.prd import PRD, Story
 from core.runner import RunnerConfig, RunnerState
 
 
-class ConfigScreen(ModalScreen[Optional[RunnerConfig]]):
+class ConfigScreen(ModalScreen[RunnerConfig | None]):
     """Configuration screen for setting up the runner."""
 
     CSS = """
@@ -378,7 +377,7 @@ class RalphApp(App):
 
             with Vertical(id="content"):
                 yield Static("📝 Agent Output", classes="panel-title")
-                yield Log(id="output-log", highlight=True, markup=True)
+                yield Log(id="output-log", highlight=True)
 
                 with VerticalScroll(id="history-panel"):
                     yield Static("📜 Run History", classes="panel-title")
