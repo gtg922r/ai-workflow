@@ -10,8 +10,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Callable
 
-from ..agents.base import AgentBackend, AgentConfig, AgentResult, AgentType
-from ..agents.registry import create_agent, list_available_agents
+from agents.base import AgentBackend, AgentConfig, AgentResult, AgentType
+from agents.registry import create_agent, list_available_agents
 from .prd import PRD, Story
 from .progress import ProgressLogger, RunRecord
 
