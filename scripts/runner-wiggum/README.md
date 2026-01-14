@@ -79,7 +79,7 @@ From your project directory, run:
 uv run scripts/runner-wiggum/ralph.py
 ```
 
-That's it! `uv` automatically handles the virtual environment and dependencies.
+That's it! `uv` automatically handles Python 3.11+, the virtual environment, and dependencies.
 
 Or specify a different project path:
 
