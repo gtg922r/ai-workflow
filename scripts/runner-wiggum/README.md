@@ -76,15 +76,15 @@ Optionally customize `prompt.md` and `AGENTS.md` for your project.
 From your project directory, run:
 
 ```bash
-uv run scripts/runner-wiggum/ralph.py
+uv run --python 3.11 scripts/runner-wiggum/ralph.py
 ```
 
-That's it! `uv` automatically handles Python 3.11+, the virtual environment, and dependencies.
+That's it! `uv` automatically downloads Python 3.11 if needed, creates the virtual environment, and installs dependencies.
 
 Or specify a different project path:
 
 ```bash
-uv run scripts/runner-wiggum/ralph.py --path /path/to/your/project
+uv run --python 3.11 scripts/runner-wiggum/ralph.py --path /path/to/your/project
 ```
 
 **Alternative:** Make the script directly executable:
