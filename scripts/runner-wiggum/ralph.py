@@ -1,13 +1,31 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run
+# /// script
+# requires-python = ">=3.11"
+# dependencies = [
+#     "textual>=0.47.0",
+#     "rich>=13.0.0",
+# ]
+# ///
 """Ralph Wiggum Agent Runner - TUI Application.
 
 A terminal user interface for running autonomous AI agent loops.
+
+Usage:
+    uv run scripts/runner-wiggum/ralph.py
+    uv run scripts/runner-wiggum/ralph.py --path /path/to/project
 """
 
 from __future__ import annotations
 
-import asyncio
+import sys
 from pathlib import Path
+
+# Ensure local packages (agents/, core/) are importable when run from anywhere
+_script_dir = Path(__file__).parent.resolve()
+if str(_script_dir) not in sys.path:
+    sys.path.insert(0, str(_script_dir))
+
+import asyncio
 
 from rich.text import Text
 from textual import on

@@ -21,10 +21,10 @@ This approach is "deterministically bad in an undeterministic world" — meaning
 
 ## Quick Start
 
-### 1. Install Dependencies
+### 1. Install `uv` (if you haven't already)
 
 ```bash
-pip install -r requirements.txt
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
 ### 2. Install an AI Agent CLI
@@ -73,13 +73,25 @@ Optionally customize `prompt.md` and `AGENTS.md` for your project.
 
 ### 4. Run the TUI
 
+From your project directory, run:
+
 ```bash
-python scripts/runner-wiggum/ralph.py
+uv run scripts/runner-wiggum/ralph.py
 ```
 
-Or specify a project path:
+That's it! `uv` automatically handles the virtual environment and dependencies.
+
+Or specify a different project path:
+
 ```bash
-python scripts/runner-wiggum/ralph.py --path /path/to/your/project
+uv run scripts/runner-wiggum/ralph.py --path /path/to/your/project
+```
+
+**Alternative:** Make the script directly executable:
+
+```bash
+chmod +x scripts/runner-wiggum/ralph.py
+./scripts/runner-wiggum/ralph.py
 ```
 
 ## TUI Controls
