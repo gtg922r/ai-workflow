@@ -1,0 +1,60 @@
+description = "Create or open today's daily note with optional initial content"
+
+prompt = """
+# Task: Daily Note Management
+
+Create or update the user's daily note for today.
+
+## Instructions
+
+1. First, check if today's daily note already exists:
+   - Common paths: `daily/YYYY-MM-DD.md`, `Daily Notes/YYYY-MM-DD.md`, or similar
+   - Use `list_directory` to discover the daily notes folder pattern if needed
+
+2. If the note exists:
+   - Use `read_note` to show its current content
+   - Ask if the user wants to add anything
+
+3. If creating a new daily note:
+   - Use today's date in ISO format (YYYY-MM-DD) for the filename
+   - Include this frontmatter:
+     ```yaml
+     ---
+     date: YYYY-MM-DD
+     type: daily
+     tags:
+       - daily
+     ---
+     ```
+   - Add a heading with the full date
+   - Include optional sections: Tasks, Notes, Links
+
+4. If the user provided additional context:
+   {{args}}
+
+   Incorporate this into the daily note content.
+
+## Template Structure
+
+```markdown
+---
+date: YYYY-MM-DD
+type: daily
+tags:
+  - daily
+---
+
+# Day, Month DD, YYYY
+
+## Tasks
+- [ ]
+
+## Notes
+
+
+## Links
+
+```
+
+Adapt the template based on existing daily note patterns in the vault.
+"""

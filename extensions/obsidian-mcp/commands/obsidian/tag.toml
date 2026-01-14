@@ -1,0 +1,51 @@
+description = "Manage tags across your vault - add, remove, or list tags on notes"
+
+prompt = """
+# Task: Tag Management
+
+Manage tags in the Obsidian vault based on the user's request.
+
+## User Input
+{{args}}
+
+## Instructions
+
+Parse the request to determine the operation:
+
+### List Tags
+If the user wants to see tags:
+1. Use `manage_tags` with action "list" to show all tags in the vault
+2. Optionally filter by folder or note pattern
+3. Present tags with usage counts if available
+
+### Add Tags
+If adding tags to notes:
+1. Identify target note(s) - may require `search_notes` first
+2. Use `manage_tags` with action "add" and the specified tag(s)
+3. Confirm changes made
+
+### Remove Tags
+If removing tags:
+1. Identify target note(s)
+2. Use `manage_tags` with action "remove" and specified tag(s)
+3. Confirm changes made
+
+### Bulk Operations
+For operations across multiple notes:
+1. Use `search_notes` to find matching notes
+2. Apply tag changes to each note
+3. Provide summary of all changes
+
+## Output Format
+
+After any operation, provide:
+- Summary of changes made
+- List of affected notes
+- Current tag state of modified notes
+
+## Examples of Requests
+- "list all tags" → Show vault-wide tag listing
+- "add #reviewed to project notes" → Tag matching notes
+- "remove #draft from published/*" → Remove tag from folder
+- "what notes have #urgent?" → Search by tag
+"""

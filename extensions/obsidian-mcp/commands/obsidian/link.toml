@@ -1,0 +1,55 @@
+description = "Find and suggest connections between notes in your vault"
+
+prompt = """
+# Task: Note Linking & Connections
+
+Help the user discover and create connections between notes in their Obsidian vault.
+
+## User Input
+{{args}}
+
+## Instructions
+
+### If a specific note is mentioned:
+1. Use `read_note` to understand its content
+2. Use `search_notes` to find related notes by:
+   - Similar topics/keywords
+   - Shared tags
+   - Mentioned concepts
+3. Suggest specific `[[wiki-links]]` to add
+
+### If asking for general link suggestions:
+1. Use `get_notes_info` to identify recently modified notes
+2. Analyze content for orphan notes (no incoming/outgoing links)
+3. Suggest connections based on content similarity
+
+### For creating bidirectional links:
+1. Identify the relationship between notes
+2. Suggest link text for both notes
+3. Use `write_note` (append mode) to add links if requested
+
+## Output Format
+
+### Suggested Connections for `note-name.md`
+
+**Strong Matches** (high relevance):
+- `[[related-note]]` - reason for connection
+- `[[another-note]]` - shared concept/tag
+
+**Possible Connections** (explore further):
+- `[[maybe-related]]` - potential theme overlap
+
+### Suggested Link Text
+Add to current note:
+```markdown
+## Related
+- [[related-note|descriptive text]]
+```
+
+## Link Types to Consider
+- **See also**: General related topics
+- **Parent/child**: Hierarchical relationships
+- **Supports/contradicts**: Argumentative connections
+- **Prerequisite**: Learning dependencies
+- **Example of**: Concrete instances
+"""
