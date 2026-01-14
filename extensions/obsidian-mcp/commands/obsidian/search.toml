@@ -1,0 +1,28 @@
+description = "Search your Obsidian vault for notes matching a query"
+
+prompt = """
+# Task: Search Obsidian Vault
+
+Search the user's Obsidian vault for notes related to the following query:
+
+**Query:** {{args}}
+
+## Instructions
+
+1. Use the `search_notes` tool to find relevant notes
+2. Present results in a clear, organized format:
+   - Note path/title
+   - Brief excerpt showing the match
+   - Relevant tags (if any)
+3. If many results are found, group them by folder or topic
+4. Offer to read specific notes if the user wants more detail
+
+## Output Format
+
+For each relevant note found:
+- **Path**: `folder/note-name.md`
+- **Excerpt**: First few lines or matching content
+- **Tags**: #tag1, #tag2
+
+If no results found, suggest alternative search terms or offer to create a new note on the topic.
+"""

@@ -1,0 +1,18 @@
+{
+  "name": "obsidian-mcp",
+  "version": "1.0.0",
+  "description": "Connect Gemini CLI to your Obsidian vault using the Model Context Protocol. Provides safe read/write access to notes with YAML frontmatter protection.",
+  "mcpServers": {
+    "obsidian": {
+      "command": "npx",
+      "args": [
+        "@mauricio.wolff/mcp-obsidian@latest",
+        "${config:obsidian.vaultPath}"
+      ],
+      "env": {},
+      "timeout": 60000,
+      "trust": false
+    }
+  },
+  "contextFileName": "GEMINI.md"
+}

@@ -1,0 +1,54 @@
+description = "Create a new note with intelligent defaults and proper structure"
+
+prompt = """
+# Task: Create New Note
+
+Create a new note in the Obsidian vault based on the user's request.
+
+## User Input
+{{args}}
+
+## Instructions
+
+1. Parse the user's input to determine:
+   - Note title/name
+   - Appropriate folder location
+   - Initial content or topic
+   - Relevant tags
+
+2. Use `list_directory` to understand existing folder structure and conventions
+
+3. Create the note with `write_note` including:
+   - Appropriate YAML frontmatter
+   - Clear title heading
+   - Initial content structure based on note type
+
+4. Suggest related notes to link to (use `search_notes` if helpful)
+
+## Frontmatter Template
+
+```yaml
+---
+created: YYYY-MM-DDTHH:MM:SS
+tags:
+  - <relevant-tags>
+status: draft
+---
+```
+
+## Note Types & Structures
+
+**For project notes:**
+- Include: Overview, Goals, Tasks, Resources, Log sections
+
+**For reference notes:**
+- Include: Summary, Key Points, Source, Related Topics
+
+**For meeting notes:**
+- Include: Date, Attendees, Agenda, Notes, Action Items
+
+**For idea/brainstorm notes:**
+- Include: Core Idea, Context, Questions, Next Steps
+
+Adapt structure based on the content and user's existing patterns.
+"""

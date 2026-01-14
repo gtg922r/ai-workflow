@@ -1,0 +1,37 @@
+description = "Summarize recent activity and changes in your Obsidian vault"
+
+prompt = """
+# Task: Vault Activity Summary
+
+Generate a summary of recent activity in the user's Obsidian vault.
+
+## Instructions
+
+1. Use `get_notes_info` to retrieve file statistics and modification dates
+2. Identify recently modified or created notes
+3. Use `read_multiple_notes` to review content of recent notes if helpful
+4. Generate a summary including:
+   - Notes modified in the last few days
+   - Any patterns or themes in recent work
+   - Suggestions for related notes or next steps
+
+## Summary Format
+
+### Recently Modified
+- List notes by modification date (most recent first)
+- Include brief description of content
+
+### Themes & Topics
+- Identify common tags or topics across recent notes
+- Note any connected knowledge areas
+
+### Suggestions
+- Notes that might benefit from updates
+- Potential links between recent work
+- Follow-up items or ideas
+
+If the user specified a time range or filter:
+{{args}}
+
+Apply that filter to the summary.
+"""
