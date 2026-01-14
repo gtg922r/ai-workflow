@@ -6,8 +6,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
-from ..agents.base import AgentResult, AgentType
-from ..agents.registry import list_available_agents
+from agents.base import AgentResult, AgentType
+from agents.registry import list_available_agents
 from .prd import Story
 from .runner import Runner, RunnerConfig, RunnerState
 
