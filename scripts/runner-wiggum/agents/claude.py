@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import shutil
 from pathlib import Path
 
@@ -126,44 +125,16 @@ class ClaudeAgent(AgentBackend):
                 error=str(e),
             )
 
-        try:
-            process = await asyncio.create_subprocess_exec(
-                *cmd,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.STDOUT,
-                cwd=self.config.working_dir,
-            )
-
-            try:
-                stdout, _ = await asyncio.wait_for(
-                    process.communicate(),
-                    timeout=self.config.timeout_seconds,
-                )
-                output = stdout.decode("utf-8", errors="replace")
-                exit_code = process.returncode or 0
-            except asyncio.TimeoutError:
-                process.kill()
-                await process.wait()
-                return AgentResult(
-                    success=False,
-                    output="",
-                    exit_code=-1,
-                    error=f"Timeout after {self.config.timeout_seconds}s",
-                )
-
-        except FileNotFoundError:
+        output, exit_code, error = await self._run_subprocess(
+            cmd,
+            cli_label="Claude CLI",
+        )
+        if error:
             return AgentResult(
                 success=False,
-                output="",
-                exit_code=-1,
-                error="Claude CLI executable not found",
-            )
-        except Exception as e:
-            return AgentResult(
-                success=False,
-                output="",
-                exit_code=-1,
-                error=str(e),
+                output=output,
+                exit_code=exit_code,
+                error=error,
             )
 
         return self.parse_output(output, exit_code)

@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
+import asyncio
+import os
+import re
 from abc import ABC, abstractmethod
+import asyncio
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
@@ -83,14 +87,88 @@ class AgentBackend(ABC):
         ...
 
     @abstractmethod
-    async def run(self, prompt: str) -> AgentResult:
-        """Run the agent with the given prompt."""
-        ...
-
-    @abstractmethod
     def build_command(self, prompt: str) -> list[str]:
         """Build the command to execute for the agent."""
         ...
+
+    def get_environment(self) -> dict[str, str] | None:
+        """Get custom environment variables for the subprocess.
+
+        Override in subclasses to provide agent-specific env vars.
+        Returns None to use the default environment.
+        """
+        return None
+
+    async def run(self, prompt: str) -> AgentResult:
+        """Run the agent with the given prompt.
+
+        This method handles subprocess execution, timeout, and error handling.
+        Subclasses should override build_command() and optionally get_environment().
+        """
+        try:
+            cmd = self.build_command(prompt)
+        except RuntimeError as e:
+            return AgentResult(
+                success=False,
+                output="",
+                exit_code=-1,
+                error=str(e),
+            )
+
+        return await self._execute_subprocess(cmd)
+
+    async def _execute_subprocess(self, cmd: list[str]) -> AgentResult:
+        """Execute a subprocess command and return the result.
+
+        Handles timeout, errors, and output capture consistently.
+        """
+        env = self.get_environment()
+        if env is None:
+            env = os.environ.copy()
+
+        try:
+            process = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT,
+                cwd=self.config.working_dir,
+                env=env,
+            )
+
+            try:
+                stdout, _ = await asyncio.wait_for(
+                    process.communicate(),
+                    timeout=self.config.timeout_seconds,
+                )
+                output = stdout.decode("utf-8", errors="replace")
+                exit_code = process.returncode or 0
+            except asyncio.TimeoutError:
+                process.kill()
+                await process.wait()
+                return AgentResult(
+                    success=False,
+                    output="",
+                    exit_code=-1,
+                    error=f"Timeout after {self.config.timeout_seconds}s",
+                )
+
+        except FileNotFoundError:
+            cli_name = cmd[0] if cmd else "CLI"
+            return AgentResult(
+                success=False,
+                output="",
+                exit_code=-1,
+                error=f"{cli_name} executable not found",
+            )
+        except Exception as e:
+            return AgentResult(
+                success=False,
+                output="",
+                exit_code=-1,
+                error=str(e),
+            )
+
+        return self.parse_output(output, exit_code)
 
     def parse_output(self, output: str, exit_code: int) -> AgentResult:
         """Parse the output from the agent. Override for custom parsing."""
@@ -110,10 +188,43 @@ class AgentBackend(ABC):
             complete_signal=complete_signal,
         )
 
+    async def _run_subprocess(
+        self,
+        cmd: list[str],
+        *,
+        cli_label: str,
+        env: dict[str, str] | None = None,
+    ) -> tuple[str, int, str | None]:
+        """Run the agent CLI subprocess and return output, exit code, and error."""
+        try:
+            process = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT,
+                cwd=self.config.working_dir,
+                env=env,
+            )
+
+            try:
+                stdout, _ = await asyncio.wait_for(
+                    process.communicate(),
+                    timeout=self.config.timeout_seconds,
+                )
+                output = stdout.decode("utf-8", errors="replace")
+                exit_code = process.returncode or 0
+                return output, exit_code, None
+            except asyncio.TimeoutError:
+                process.kill()
+                await process.wait()
+                return "", -1, f"Timeout after {self.config.timeout_seconds}s"
+
+        except FileNotFoundError:
+            return "", -1, f"{cli_label} executable not found"
+        except Exception as e:
+            return "", -1, str(e)
+
     def _extract_tokens(self, output: str) -> int | None:
         """Extract token count from output if present."""
-        import re
-
         patterns = [
             r"tokens?[:\s]+(\d[\d,]+)",
             r"(\d[\d,]+)\s*tokens?",
@@ -126,8 +237,6 @@ class AgentBackend(ABC):
 
     def _extract_cost(self, output: str) -> float | None:
         """Extract cost from output if present."""
-        import re
-
         patterns = [
             r"\$(\d+\.?\d*)",
             r"cost[:\s]+\$?(\d+\.?\d*)",
@@ -140,4 +249,3 @@ class AgentBackend(ABC):
                 except ValueError:
                     pass
         return None
-
