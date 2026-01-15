@@ -4,8 +4,28 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
+from enum import Enum
 from pathlib import Path
 from typing import Any
+
+
+class StoryType(Enum):
+    """Type of story for prompt optimization."""
+
+    FEATURE = "feature"
+    BUG = "bug"
+    CHORE = "chore"
+    TEST = "test"
+
+    @classmethod
+    def from_string(cls, value: str | None) -> StoryType | None:
+        """Convert a string to a StoryType, returning None for invalid/missing values."""
+        if not value:
+            return None
+        try:
+            return cls(value.lower())
+        except ValueError:
+            return None
 
 
 @dataclass
@@ -17,6 +37,7 @@ class Story:
     description: str
     acceptance_criteria: list[str] = field(default_factory=list)
     passes: bool = False
+    story_type: StoryType | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
@@ -28,6 +49,7 @@ class Story:
             description=data.get("description", ""),
             acceptance_criteria=data.get("acceptanceCriteria", []),
             passes=data.get("passes", False),
+            story_type=StoryType.from_string(data.get("type")),
             metadata=data.get("metadata", {}),
         )
 
@@ -40,6 +62,8 @@ class Story:
             "acceptanceCriteria": self.acceptance_criteria,
             "passes": self.passes,
         }
+        if self.story_type:
+            result["type"] = self.story_type.value
         if self.metadata:
             result["metadata"] = self.metadata
         return result
@@ -101,6 +125,26 @@ class PRD:
         for story in self.stories:
             if story.id == story_id:
                 story.passes = True
+                return True
+        return False
+
+    def reopen_story(self, story_id: str, feedback: str | None = None) -> bool:
+        """Reopen a story for revision (passes=False).
+
+        Args:
+            story_id: The story ID to reopen
+            feedback: Optional reviewer feedback to add to metadata
+
+        Returns:
+            True if story was found and reopened
+        """
+        for story in self.stories:
+            if story.id == story_id:
+                story.passes = False
+                if feedback:
+                    if "review_feedback" not in story.metadata:
+                        story.metadata["review_feedback"] = []
+                    story.metadata["review_feedback"].append(feedback)
                 return True
         return False
 

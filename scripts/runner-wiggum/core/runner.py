@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import re
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -12,8 +13,26 @@ from typing import Any, Callable
 
 from agents.base import AgentBackend, AgentConfig, AgentResult, AgentType
 from agents.registry import create_agent, list_available_agents
-from .prd import PRD, Story
+from .git import (
+    GitManager,
+    GitError,
+    DirtyWorkingDirectoryError,
+    BranchError,
+    MergeConflictError,
+)
+from .prd import PRD, Story, StoryType
 from .progress import ProgressLogger, RunRecord
+
+# Pattern to extract review verdict from agent output
+VERDICT_PATTERN = re.compile(r"<verdict>(APPROVE|REJECT)</verdict>", re.IGNORECASE)
+
+
+class ReviewVerdict(Enum):
+    """Result of a code review."""
+
+    APPROVE = "approve"
+    REJECT = "reject"
+    UNKNOWN = "unknown"  # Could not extract verdict
 
 
 class RunnerState(Enum):
@@ -38,6 +57,9 @@ class RunnerConfig:
     timeout_seconds: int = 600
     prompt_template_path: Path | None = None
     prd_path: Path | None = None
+    git_enabled: bool = True  # Enable git state management
+    main_branch: str = "main"  # Name of main/default branch
+    review_enabled: bool = False  # Enable post-implementation review phase
 
 
 @dataclass
@@ -72,7 +94,9 @@ class Runner:
         self.prd: PRD | None = None
         self.progress: ProgressLogger | None = None
         self.agent: AgentBackend | None = None
+        self.git: GitManager | None = None
         self._current_run: RunRecord | None = None
+        self._current_story: Story | None = None
         self._stop_requested = False
 
         # Callbacks for TUI updates
@@ -80,6 +104,8 @@ class Runner:
         self._on_iteration_start: Callable[[int, Story | None], None] | None = None
         self._on_iteration_end: Callable[[int, AgentResult], None] | None = None
         self._on_output: Callable[[str], None] | None = None
+        self._on_git_dirty: Callable[[str], bool] | None = None  # Return True to continue anyway
+        self._on_git_reset_prompt: Callable[[str], bool] | None = None  # Return True to reset
 
     def set_callbacks(
         self,
@@ -87,12 +113,25 @@ class Runner:
         on_iteration_start: Callable[[int, Story | None], None] | None = None,
         on_iteration_end: Callable[[int, AgentResult], None] | None = None,
         on_output: Callable[[str], None] | None = None,
+        on_git_dirty: Callable[[str], bool] | None = None,
+        on_git_reset_prompt: Callable[[str], bool] | None = None,
     ) -> None:
-        """Set callbacks for runner events."""
+        """Set callbacks for runner events.
+
+        Args:
+            on_state_change: Called when runner state changes
+            on_iteration_start: Called at the start of each iteration
+            on_iteration_end: Called at the end of each iteration
+            on_output: Called for general output messages
+            on_git_dirty: Called when working directory is dirty. Return True to continue anyway.
+            on_git_reset_prompt: Called on failure to prompt for branch reset. Return True to reset.
+        """
         self._on_state_change = on_state_change
         self._on_iteration_start = on_iteration_start
         self._on_iteration_end = on_iteration_end
         self._on_output = on_output
+        self._on_git_dirty = on_git_dirty
+        self._on_git_reset_prompt = on_git_reset_prompt
 
     def _set_state(self, state: RunnerState) -> None:
         """Update state and notify callback."""
@@ -101,7 +140,7 @@ class Runner:
             self._on_state_change(state)
 
     def initialize(self) -> bool:
-        """Initialize the runner with PRD and agent."""
+        """Initialize the runner with PRD, agent, and git manager."""
         try:
             # Load PRD
             prd_path = self.config.prd_path or (self.config.project_path / "prd.json")
@@ -118,6 +157,24 @@ class Runner:
                 project_path=self.config.project_path,
             )
             self.progress.initialize()
+
+            # Initialize git manager if enabled
+            if self.config.git_enabled:
+                self.git = GitManager(
+                    repo_path=self.config.project_path,
+                    main_branch=self.config.main_branch,
+                    on_output=self._on_output,
+                )
+
+                # Check if it's a git repo
+                if not self.git.is_git_repo():
+                    if self._on_output:
+                        self._on_output("Warning: Not a git repository, disabling git management")
+                    self.git = None
+                else:
+                    # Check for clean working directory
+                    if not self._check_git_clean_state():
+                        return False
 
             # Initialize agent
             agent_config = AgentConfig(
@@ -140,9 +197,122 @@ class Runner:
             self.stats.errors.append(f"Initialization error: {e}")
             return False
 
+    def _check_git_clean_state(self) -> bool:
+        """Check if git working directory is clean.
+
+        Returns:
+            True if clean or user chose to continue, False to abort
+        """
+        if not self.git:
+            return True
+
+        try:
+            self.git.check_clean_state()
+            return True
+        except DirtyWorkingDirectoryError as e:
+            # Callback to ask user what to do
+            if self._on_git_dirty:
+                if self._on_git_dirty(e.status):
+                    if self._on_output:
+                        self._on_output("Continuing with dirty working directory...")
+                    return True
+                else:
+                    self.stats.errors.append("Aborted: working directory not clean")
+                    return False
+            else:
+                # No callback, fail by default
+                self.stats.errors.append(f"Working directory not clean:\n{e.status}")
+                return False
+
+    def _setup_story_branch(self, story: Story) -> bool:
+        """Create or switch to the story branch.
+
+        Returns:
+            True if successful, False otherwise
+        """
+        if not self.git:
+            return True
+
+        try:
+            branch_name = self.git.create_story_branch(story.id)
+            if self._on_output:
+                self._on_output(f"Working on branch: {branch_name}")
+            return True
+        except BranchError as e:
+            self.stats.errors.append(f"Git branch error: {e}")
+            return False
+
+    def _commit_and_merge_story(self, story: Story) -> bool:
+        """Commit story changes and merge back to main.
+
+        Returns:
+            True if successful, False otherwise
+        """
+        if not self.git:
+            return True
+
+        try:
+            # Commit all changes
+            commit_hash = self.git.commit_story_completion(story.id, story.title)
+            if commit_hash:
+                if self._on_output:
+                    self._on_output(f"Committed changes: {commit_hash[:8]}")
+
+            # Merge to main
+            self.git.merge_to_main(delete_branch=True)
+            if self._on_output:
+                self._on_output(f"Merged {story.id} to {self.config.main_branch}")
+
+            return True
+
+        except MergeConflictError as e:
+            self.stats.errors.append(f"Merge conflict: {e}")
+            if self._on_output:
+                self._on_output(f"Merge conflict occurred: {e}")
+            return False
+
+        except GitError as e:
+            self.stats.errors.append(f"Git error during commit/merge: {e}")
+            return False
+
+    def _handle_story_failure(self, story: Story) -> None:
+        """Handle story failure - offer to reset branch.
+
+        Args:
+            story: The failed story
+        """
+        if not self.git:
+            return
+
+        status = self.git.get_status()
+        if not status.is_story_branch:
+            return
+
+        # Check if there are uncommitted changes
+        if status.is_clean:
+            return
+
+        changes_summary = self.git.get_uncommitted_changes_summary()
+        prompt_msg = (
+            f"Story {story.id} failed with uncommitted changes:\n"
+            f"{changes_summary}\n\n"
+            "Reset branch and discard changes?"
+        )
+
+        if self._on_git_reset_prompt:
+            if self._on_git_reset_prompt(prompt_msg):
+                try:
+                    self.git.abort_and_return_to_main(story.id)
+                    if self._on_output:
+                        self._on_output(f"Reset branch and returned to {self.config.main_branch}")
+                except GitError as e:
+                    if self._on_output:
+                        self._on_output(f"Failed to reset branch: {e}")
+
     def _build_prompt(self, story: Story | None) -> str:
         """Build the prompt for the agent."""
-        template = self._load_prompt_template()
+        story_type = story.story_type if story else None
+        template = self._load_prompt_template(story_type)
 
         # Build context
         progress_content = ""
@@ -178,22 +348,156 @@ Progress: {self.prd.completed_stories}/{self.prd.total_stories} stories complete
 
         return prompt
 
-    def _load_prompt_template(self) -> str:
-        """Load the prompt template from project or default location."""
-        # First preference: project root prompt.md
-        template_path = self.config.prompt_template_path or (
+    def _load_prompt_template(self, story_type: StoryType | None = None) -> str:
+        """Load the prompt template from project or default location.
+
+        Template resolution order:
+        1. Type-specific template in project root: prompt_{type}.md
+        2. Generic template in project root: prompt.md
+        3. Type-specific bundled template: templates/prompt_{type}.md
+        4. Generic bundled template: templates/prompt.md
+        5. Minimal fallback template
+
+        Args:
+            story_type: Optional story type to look for type-specific templates
+        """
+        templates_dir = Path(__file__).resolve().parents[1] / "templates"
+
+        # Type-specific template filename
+        type_template_name = f"prompt_{story_type.value}.md" if story_type else None
+
+        # 1. Type-specific in project root (if type specified)
+        if type_template_name:
+            project_type_template = self.config.project_path / type_template_name
+            if project_type_template.exists():
+                return project_type_template.read_text()
+
+        # 2. Generic in project root (or custom path)
+        generic_path = self.config.prompt_template_path or (
             self.config.project_path / "prompt.md"
         )
-        if template_path.exists():
-            return template_path.read_text()
+        if generic_path.exists():
+            return generic_path.read_text()
 
-        # Fallback: bundled template in runner-wiggum/templates
-        bundled_template = Path(__file__).resolve().parents[1] / "templates" / "prompt.md"
+        # 3. Type-specific bundled template (if type specified)
+        if type_template_name:
+            bundled_type_template = templates_dir / type_template_name
+            if bundled_type_template.exists():
+                return bundled_type_template.read_text()
+
+        # 4. Generic bundled template
+        bundled_template = templates_dir / "prompt.md"
         if bundled_template.exists():
             return bundled_template.read_text()
 
-        # Final fallback: minimal safe template
+        # 5. Final fallback: minimal safe template
         return "{{PRD_STATUS}}\n\n{{STORY}}\n\n{{PROGRESS}}\n"
+
+    def _load_review_template(self) -> str:
+        """Load the review prompt template."""
+        # Bundled template in runner-wiggum/templates
+        bundled_template = Path(__file__).resolve().parents[1] / "templates" / "review.md"
+        if bundled_template.exists():
+            return bundled_template.read_text()
+
+        # Fallback: minimal review template
+        return """# Code Review
+Review the changes for story {{STORY_ID}}.
+
+## Changes
+```diff
+{{DIFF}}
+```
+
+End with: `<verdict>APPROVE</verdict>` or `<verdict>REJECT</verdict>`
+"""
+
+    def _build_review_prompt(self, story: Story) -> str:
+        """Build the review prompt for a completed story.
+
+        Args:
+            story: The story that was just completed
+
+        Returns:
+            The review prompt with context filled in
+        """
+        template = self._load_review_template()
+
+        # Get git diff if available
+        diff = ""
+        diff_stats = ""
+        if self.git:
+            diff = self.git.get_diff_from_main()
+            diff_stats = self.git.get_diff_stat_from_main()
+
+        # Load AGENTS.md from project root
+        agents_md_path = self.config.project_path / "AGENTS.md"
+        agents_md = ""
+        if agents_md_path.exists():
+            agents_md = agents_md_path.read_text()
+        else:
+            agents_md = "(No AGENTS.md found in project root)"
+
+        # Format acceptance criteria
+        acceptance_criteria = "\n".join(f"- {c}" for c in story.acceptance_criteria)
+
+        # Substitute into template
+        prompt = template.replace("{{STORY_ID}}", story.id)
+        prompt = prompt.replace("{{STORY_TITLE}}", story.title)
+        prompt = prompt.replace("{{STORY_DESCRIPTION}}", story.description)
+        prompt = prompt.replace("{{ACCEPTANCE_CRITERIA}}", acceptance_criteria)
+        prompt = prompt.replace("{{AGENTS_MD}}", agents_md)
+        prompt = prompt.replace("{{DIFF_STATS}}", diff_stats)
+        prompt = prompt.replace("{{DIFF}}", diff)
+
+        return prompt
+
+    def _extract_verdict(self, output: str) -> tuple[ReviewVerdict, str]:
+        """Extract the review verdict from agent output.
+
+        Args:
+            output: The agent's review output
+
+        Returns:
+            Tuple of (verdict, full_review_text)
+        """
+        match = VERDICT_PATTERN.search(output)
+        if match:
+            verdict_str = match.group(1).upper()
+            if verdict_str == "APPROVE":
+                return ReviewVerdict.APPROVE, output
+            elif verdict_str == "REJECT":
+                return ReviewVerdict.REJECT, output
+
+        return ReviewVerdict.UNKNOWN, output
+
+    async def _run_review_phase(self, story: Story) -> tuple[ReviewVerdict, str]:
+        """Run the review phase for a completed story.
+
+        Args:
+            story: The story to review
+
+        Returns:
+            Tuple of (verdict, review_output)
+        """
+        if self._on_output:
+            self._on_output(f"Starting review phase for {story.id}...")
+
+        prompt = self._build_review_prompt(story)
+
+        if self.agent:
+            result = await self.agent.run(prompt)
+            verdict, review_text = self._extract_verdict(result.output)
+
+            # Update stats
+            if result.tokens_used:
+                self.stats.total_tokens += result.tokens_used
+            if result.cost:
+                self.stats.total_cost += result.cost
+
+            return verdict, review_text
+        else:
+            return ReviewVerdict.UNKNOWN, "No agent configured for review"
 
     async def run(self) -> None:
         """Run the main agent loop."""
@@ -206,6 +510,7 @@ Progress: {self.prd.completed_stories}/{self.prd.total_stories} stories complete
         self._stop_requested = False
 
         iteration = 0
+        last_story_id: str | None = None
 
         while iteration < self.config.max_iterations and not self._stop_requested:
             iteration += 1
@@ -218,6 +523,14 @@ Progress: {self.prd.completed_stories}/{self.prd.total_stories} stories complete
 
             # Get next story
             story = self.prd.get_next_incomplete_story() if self.prd else None
+            self._current_story = story
+
+            # Setup git branch for new story (only when story changes)
+            if story and story.id != last_story_id:
+                if not self._setup_story_branch(story):
+                    self._set_state(RunnerState.ERROR)
+                    return
+                last_story_id = story.id
 
             # Notify iteration start
             if self._on_iteration_start:
@@ -275,17 +588,60 @@ Progress: {self.prd.completed_stories}/{self.prd.total_stories} stories complete
 
             # Check for completion signal
             if result.complete_signal and story:
+                # Run review phase if enabled
+                review_passed = True
+                if self.config.review_enabled:
+                    verdict, review_output = await self._run_review_phase(story)
+
+                    # Log review output to progress.txt
+                    if self.progress:
+                        self.progress.log_review(story.id, verdict.value, review_output)
+
+                    if verdict == ReviewVerdict.APPROVE:
+                        if self._on_output:
+                            self._on_output(f"Review APPROVED for {story.id}")
+                        review_passed = True
+                    elif verdict == ReviewVerdict.REJECT:
+                        if self._on_output:
+                            self._on_output(f"Review REJECTED for {story.id} - reopening story")
+                        review_passed = False
+
+                        # Reopen the story with feedback
+                        self.prd.reopen_story(story.id, review_output)
+                        self.prd.save()
+
+                        # Don't merge, continue to next iteration
+                        continue
+                    else:
+                        # Unknown verdict - treat as warning, proceed with completion
+                        if self._on_output:
+                            self._on_output(f"Warning: Could not determine review verdict for {story.id}")
+
+                # Git: commit and merge on story completion (only if review passed)
+                if review_passed and self.git:
+                    if not self._commit_and_merge_story(story):
+                        # Merge failed, but story is complete - log warning
+                        if self._on_output:
+                            self._on_output("Warning: Story completed but git merge failed")
+
                 self.prd.mark_story_complete(story.id)
                 self.prd.save()
                 self.stats.stories_completed += 1
                 if self._on_output:
                     self._on_output(f"Story {story.id} marked complete!")
 
-            # Handle errors
+                # Reset last_story_id so next story gets its own branch
+                last_story_id = None
+
+            # Handle errors - offer to reset on failure
             if result.error:
                 self.stats.errors.append(result.error)
                 if self._on_output:
                     self._on_output(f"Error: {result.error}")
+
+                # Offer to reset branch on failure
+                if story and not result.complete_signal:
+                    self._handle_story_failure(story)
 
             # Small delay between iterations
             await asyncio.sleep(1)
@@ -308,12 +664,86 @@ Progress: {self.prd.completed_stories}/{self.prd.total_stories} stories complete
         """Request the runner to stop after current iteration."""
         self._stop_requested = True
 
-    def reset(self) -> None:
-        """Reset the runner for a new session."""
+    def reset(self, reset_git_branch: bool = False) -> None:
+        """Reset the runner for a new session.
+
+        Args:
+            reset_git_branch: If True, also reset git branch and return to main
+        """
+        if reset_git_branch and self.git and self._current_story:
+            try:
+                self.git.abort_and_return_to_main(self._current_story.id)
+                if self._on_output:
+                    self._on_output(f"Reset git branch for {self._current_story.id}")
+            except GitError as e:
+                if self._on_output:
+                    self._on_output(f"Warning: Failed to reset git branch: {e}")
+
         self.state = RunnerState.IDLE
         self.stats = RunnerStats()
         self._current_run = None
+        self._current_story = None
         self._stop_requested = False
+
+    def reset_git_branch(self, story_id: str | None = None) -> bool:
+        """Reset the git branch for a story and return to main.
+
+        Args:
+            story_id: The story ID to reset. Uses current story if None.
+
+        Returns:
+            True if reset was successful
+        """
+        if not self.git:
+            return False
+
+        target_id = story_id or (self._current_story.id if self._current_story else None)
+        if not target_id:
+            if self._on_output:
+                self._on_output("No story to reset")
+            return False
+
+        try:
+            self.git.abort_and_return_to_main(target_id)
+            if self._on_output:
+                self._on_output(f"Reset branch and returned to {self.config.main_branch}")
+            return True
+        except GitError as e:
+            if self._on_output:
+                self._on_output(f"Failed to reset branch: {e}")
+            return False
+
+    def get_git_status_summary(self) -> str | None:
+        """Get a summary of current git status.
+
+        Returns:
+            Human-readable git status or None if git not enabled
+        """
+        if not self.git:
+            return None
+
+        try:
+            status = self.git.get_status()
+            parts = [f"Branch: {status.current_branch}"]
+
+            if status.is_story_branch:
+                parts.append(f"Story: {status.story_id}")
+
+            if not status.is_clean:
+                changes = []
+                if status.has_staged:
+                    changes.append("staged")
+                if status.has_unstaged:
+                    changes.append("unstaged")
+                if status.has_untracked:
+                    changes.append("untracked")
+                parts.append(f"Changes: {', '.join(changes)}")
+            else:
+                parts.append("Clean")
+
+            return " | ".join(parts)
+        except GitError:
+            return "Git status unavailable"
 
     def get_available_agents(self) -> list[tuple[AgentType, bool, str | None]]:
         """Get list of agents with availability status."""

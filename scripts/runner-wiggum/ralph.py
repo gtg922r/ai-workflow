@@ -64,6 +64,31 @@ class ConsoleRunner:
         }.get(state, "white")
         console.print(f"[{style}]State: {state.value}[/]")
 
+    def _on_git_dirty(self, status: str) -> bool:
+        """Handle dirty working directory - prompt user."""
+        from rich.console import Console
+        from rich.prompt import Confirm
+
+        console = Console()
+        console.print()
+        console.print("[yellow]Warning: Working directory has uncommitted changes:[/]")
+        console.print(f"[dim]{status}[/]")
+        console.print()
+
+        return Confirm.ask("Continue anyway?", default=False)
+
+    def _on_git_reset_prompt(self, message: str) -> bool:
+        """Handle failure reset prompt."""
+        from rich.console import Console
+        from rich.prompt import Confirm
+
+        console = Console()
+        console.print()
+        console.print(f"[yellow]{message}[/]")
+        console.print()
+
+        return Confirm.ask("Reset branch and discard changes?", default=False)
+
     def _on_iteration_start(self, iteration: int, story: Story | None) -> None:
         from rich.console import Console
         from rich.panel import Panel
@@ -123,6 +148,10 @@ class ConsoleRunner:
         console.print(f"  Agent: [cyan]{self.config.agent_type.value}[/]")
         console.print(f"  Iterations: [cyan]{self.config.max_iterations}[/]")
         console.print(f"  Project: [cyan]{self.project_path}[/]")
+        console.print(f"  Git: [cyan]{'enabled' if self.config.git_enabled else 'disabled'}[/]")
+        if self.config.git_enabled:
+            console.print(f"  Main branch: [cyan]{self.config.main_branch}[/]")
+        console.print(f"  Review: [cyan]{'enabled' if self.config.review_enabled else 'disabled'}[/]")
         
         # Check agent availability
         from agents.registry import create_agent
@@ -156,6 +185,8 @@ class ConsoleRunner:
                 on_iteration_start=self._on_iteration_start,
                 on_iteration_end=self._on_iteration_end,
                 on_output=self._on_output,
+                on_git_dirty=self._on_git_dirty,
+                on_git_reset_prompt=self._on_git_reset_prompt,
             )
         )
 
@@ -191,6 +222,9 @@ def run_console_mode(
     max_iterations: int,
     timeout: int,
     verbose: bool = False,
+    git_enabled: bool = True,
+    main_branch: str = "main",
+    review_enabled: bool = False,
 ) -> None:
     """Run the agent in simple console mode (no TUI)."""
     config = RunnerConfig(
@@ -199,6 +233,9 @@ def run_console_mode(
         max_iterations=max_iterations,
         timeout_seconds=timeout,
         allow_network=True,
+        git_enabled=git_enabled,
+        main_branch=main_branch,
+        review_enabled=review_enabled,
     )
 
     runner = ConsoleRunner(project_path, config, verbose=verbose)
@@ -330,6 +367,10 @@ class ConfigScreen(ModalScreen[RunnerConfig | None]):
                 yield Label("Auto-restart on completion:")
                 yield Switch(value=False, id="auto-restart")
 
+            with Horizontal():
+                yield Label("Enable Review Phase:")
+                yield Switch(value=False, id="review-enabled")
+
             with Horizontal(classes="buttons"):
                 yield Button("Start", variant="primary", id="config-start-btn")
                 yield Button("Cancel", variant="default", id="config-cancel-btn")
@@ -350,6 +391,7 @@ class ConfigScreen(ModalScreen[RunnerConfig | None]):
         timeout_input = self.query_one("#timeout", Input)
         network_switch = self.query_one("#allow-network", Switch)
         restart_switch = self.query_one("#auto-restart", Switch)
+        review_switch = self.query_one("#review-enabled", Switch)
 
         try:
             max_iterations = int(max_iter_input.value or "10")
@@ -368,6 +410,7 @@ class ConfigScreen(ModalScreen[RunnerConfig | None]):
             timeout_seconds=timeout,
             allow_network=network_switch.value,
             auto_restart=restart_switch.value,
+            review_enabled=review_switch.value,
         )
 
         self.dismiss(config)
@@ -825,6 +868,22 @@ def main():
         action="store_true",
         help="Show verbose output including full agent responses",
     )
+    parser.add_argument(
+        "--no-git",
+        action="store_true",
+        help="Disable git state management (branch creation, commits, etc.)",
+    )
+    parser.add_argument(
+        "--main-branch",
+        type=str,
+        default="main",
+        help="Name of the main branch (default: main)",
+    )
+    parser.add_argument(
+        "--review",
+        action="store_true",
+        help="Enable post-implementation review phase (reviewer critiques code before merging)",
+    )
     args = parser.parse_args()
 
     project_path = args.path.resolve()
@@ -838,6 +897,9 @@ def main():
             max_iterations=args.iterations,
             timeout=args.timeout,
             verbose=args.verbose,
+            git_enabled=not args.no_git,
+            main_branch=args.main_branch,
+            review_enabled=args.review,
         )
     else:
         # Full TUI mode

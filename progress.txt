@@ -2,3 +2,24 @@
 # Started: 2026-01-14T23:17:41.039433
 # Project: ai-workflow
 ---
+
+[2026-01-14 23:23:50] Run #1 [runner-git]: ✓ Completed (369.7s)
+   Summary: <promise>COMPLETE</promise>
+
+[2026-01-14 23:23:50] 📋 Decision: Used conventional commit format `feat({story_id}): {story_title}` for automatic commits to align with repository conventions in AGENTS.md
+
+[2026-01-14 23:23:50] 📋 Decision: Made git management optional via `--no-git` flag to support non-git repositories or manual git workflows
+
+[2026-01-14 23:23:50] 💡 Learning: The runner needs to track story changes via `last_story_id` to avoid recreating branches on every iteration for the same story
+
+[2026-01-14 23:28:57] Run #2 [runner-review]: ✓ Completed (305.5s)
+   Summary: <promise>COMPLETE</promise>
+
+[2026-01-14 23:28:57] 📋 Decision: Used `<verdict>APPROVE|REJECT</verdict>` markers (similar to the existing `<promise>COMPLETE</promise>` pattern) for review verdicts to maintain consistency with the codebase's marker-based signal extraction approach.
+
+[2026-01-14 23:33:14] Run #3 [runner-prompts]: ✓ Completed (255.9s)
+   Summary: <promise>COMPLETE</promise>
+
+[2026-01-14 23:33:14] 📋 Decision: Used `story_type` as the Python field name (rather than `type`) to avoid shadowing the built-in `type()` function, while keeping `type` as the JSON key for cleaner PRD files.
+
+[2026-01-14 23:33:14] 📋 Decision: Template resolution checks project root first (for both type-specific and generic) before bundled templates, allowing users to customize any template by placing it in their project root.

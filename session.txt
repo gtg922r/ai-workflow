@@ -1,7 +1,14 @@
 Session: ralph-20260114-231741-48bbce
 Started: 2026-01-14T23:17:41.039433
-Last Update: 2026-01-14T23:17:41.040244
-Total Runs: 1
+Last Update: 2026-01-14T23:33:14.165954
+Total Runs: 3
 
 --- Run History ---
-✗ Run #1 [runner-git] (?)
+✓ Run #1 [runner-git] (369.7s)
+  <promise>COMPLETE</promise>
+
+✓ Run #2 [runner-review] (305.5s)
+  <promise>COMPLETE</promise>
+
+✓ Run #3 [runner-prompts] (255.9s)
+  <promise>COMPLETE</promise>

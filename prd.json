@@ -22,8 +22,8 @@
         "Upon successful completion (verification + review), Runner stages all changes and commits with Story title. Merge back to local main.",
         "On failure/reset, offer to hard reset the temporary branch."
       ],
-      "passes": false
-    },    
+      "passes": true
+    },
     {
       "id": "runner-review",
       "title": "Add Post-Implementation Review Phase",
@@ -35,7 +35,7 @@
         "Output of review should be included in progress.txt",
         "If Reviewer output contains 'REJECT', reopen the story with feedback. If 'APPROVE', complete it."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "runner-prompts",
@@ -47,7 +47,7 @@
         "Create optimized `prompt_feature.md` (creative/expansive) and `prompt_bug.md` (strict/analytic) templates.",
         "Fall back to `prompt.md` if specific template missing."
       ],
-      "passes": false
+      "passes": true
     }
   ]
 }

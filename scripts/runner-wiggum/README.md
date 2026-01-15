@@ -16,6 +16,8 @@ This approach is "deterministically bad in an undeterministic world" — meaning
 - **Multi-agent support** - Works with Claude Code CLI and Cursor CLI
 - **PRD-driven** - Define user stories in a simple JSON format
 - **Progress tracking** - Session stats, run history, and cost tracking
+- **Git state management** - Automatic branching, commits, and merging per story
+- **Post-implementation review** - Optional reviewer phase to critique code before merging
 - **Sandboxed execution** - Agents run with restricted permissions
 - **Easy restart** - Continue where you left off
 
@@ -113,6 +115,7 @@ The TUI allows you to configure:
 - **Timeout** - Maximum time per iteration (seconds)
 - **Allow Network** - Enable/disable network access for the agent
 - **Auto-restart** - Automatically restart when PRD is complete
+- **Review Phase** - Enable post-implementation code review before merging
 
 ## File Structure
 
@@ -125,8 +128,13 @@ your-project/
 ├── session.txt        # Current session state (auto-generated)
 └── scripts/
     └── runner-wiggum/
-        ├── ralph.py         # TUI entry point
-        ├── core/            # Core runner logic
+        ├── ralph.py         # TUI/CLI entry point
+        ├── core/
+        │   ├── runner.py    # Main orchestration
+        │   ├── controller.py # TUI controller layer
+        │   ├── git.py       # Git state management
+        │   ├── prd.py       # PRD parsing
+        │   └── progress.py  # Progress logging
         ├── agents/          # Agent backends
         ├── templates/       # Example templates
         └── requirements.txt
@@ -135,12 +143,92 @@ your-project/
 ## How It Works
 
 1. **Load PRD** - Read user stories from `prd.json`
-2. **Find next story** - Get the first story where `passes: false`
-3. **Build prompt** - Combine template with story context and progress history
-4. **Run agent** - Execute the AI agent in headless mode
-5. **Parse output** - Look for completion signal (`<promise>COMPLETE</promise>`)
-6. **Update state** - Mark story complete, save progress
-7. **Repeat** - Continue until all stories pass or max iterations reached
+2. **Check git state** - Ensure working directory is clean
+3. **Create branch** - Switch to `wiggum/{story-id}` branch
+4. **Build prompt** - Combine template with story context and progress history
+5. **Run agent** - Execute the AI agent in headless mode
+6. **Parse output** - Look for completion signal (`<promise>COMPLETE</promise>`)
+7. **Review phase** (optional) - Run a reviewer pass to critique the implementation
+8. **Commit & merge** - Stage all changes, commit with story title, merge to main
+9. **Update state** - Mark story complete, save progress
+10. **Repeat** - Continue until all stories pass or max iterations reached
+
+## Git State Management
+
+The runner automatically manages git branches to keep each story as an atomic, safe unit of work:
+
+### Branch Workflow
+
+1. **Pre-flight check** - Verifies working directory is clean before starting
+2. **Story branches** - Creates `wiggum/{story-id}` branch for each story
+3. **Automatic commits** - On story completion, stages all changes and commits with title
+4. **Merge to main** - Merges completed story branch back to main, deletes branch
+5. **Failure recovery** - Offers to hard reset branch on failure/abort
+
+### CLI Options
+
+```bash
+# Disable git management entirely
+uv run ralph.py --no-git
+
+# Use a different main branch name
+uv run ralph.py --main-branch develop
+```
+
+### Dirty Working Directory
+
+If the working directory has uncommitted changes at startup, the runner will:
+- Display the current changes
+- Prompt to continue anyway (console mode) or fail (TUI mode by default)
+
+### Failure Recovery
+
+When a story fails with uncommitted changes:
+- The runner prompts to reset the branch
+- Choosing "yes" discards all changes and returns to main
+- Choosing "no" keeps the branch for manual inspection
+
+## Review Phase
+
+The review phase is an optional post-implementation step that critiques code before merging. When enabled, after an implementation agent signals completion, a second "reviewer" pass examines the changes.
+
+### How Review Works
+
+1. After detecting `<promise>COMPLETE</promise>`, the runner triggers a review
+2. The reviewer sees:
+   - The story's acceptance criteria
+   - The `git diff` showing all changes from main
+   - The project's `AGENTS.md` guidelines
+3. The reviewer outputs either:
+   - `<verdict>APPROVE</verdict>` - Changes are ready to merge
+   - `<verdict>REJECT</verdict>` - Changes need revision
+4. If APPROVED: Story is marked complete and merged to main
+5. If REJECTED: Story is reopened with feedback, and the loop continues
+
+### Enabling Review
+
+```bash
+# CLI flag
+uv run ralph.py --no-tui --review
+
+# Or enable in TUI configuration screen
+```
+
+### Review Output
+
+Review results are logged to `progress.txt`, including:
+- The verdict (APPROVE/REJECT)
+- The reviewer's full analysis
+- Any feedback for rejected changes
+
+### When to Use Review
+
+Review is useful when:
+- Working on complex or high-stakes changes
+- Training the agent loop on a new codebase
+- Catching common patterns the implementer misses
+
+Review adds overhead (an extra agent call per completion), so consider disabling for simple tasks or rapid iteration.
 
 ## PRD Format
 
@@ -153,6 +241,7 @@ your-project/
       "id": "unique-id",
       "title": "Short title",
       "description": "Detailed description of the story",
+      "type": "feature",
       "acceptanceCriteria": [
         "Criterion 1",
         "Criterion 2"
@@ -163,6 +252,19 @@ your-project/
 }
 ```
 
+### Story Types
+
+The optional `type` field enables task-type specific prompts:
+
+| Type | Description | Prompt Style |
+|------|-------------|--------------|
+| `feature` | New functionality | Creative, expansive - encourages design thinking |
+| `bug` | Bug fixes | Strict, analytic - focuses on root cause analysis |
+| `chore` | Maintenance tasks | Uses default prompt |
+| `test` | Test coverage | Uses default prompt |
+
+When a story has a `type` field, the runner looks for `prompt_{type}.md` (e.g., `prompt_feature.md`) before falling back to the generic `prompt.md`.
+
 ### Story Best Practices
 
 1. **Keep stories small** - Should be completable in one context window
@@ -170,15 +272,42 @@ your-project/
 3. **Independent** - Stories should be independently verifiable
 4. **Test-driven** - Include testing requirements in criteria
 
-## Prompt Template
+## Prompt Templates
 
-The default prompt template uses these placeholders:
+The runner supports task-type specific prompts to optimize agent behavior for different kinds of work.
+
+### Template Resolution Order
+
+1. Type-specific in project root: `prompt_{type}.md`
+2. Generic in project root: `prompt.md`
+3. Type-specific bundled: `templates/prompt_{type}.md`
+4. Generic bundled: `templates/prompt.md`
+
+### Built-in Templates
+
+| Template | Purpose |
+|----------|---------|
+| `prompt.md` | Generic development tasks |
+| `prompt_feature.md` | Feature development - creative, design-focused |
+| `prompt_bug.md` | Bug fixes - strict, analytical, minimal-change focused |
+
+### Template Placeholders
+
+All templates support these placeholders:
 
 - `{{PRD_STATUS}}` - Current PRD completion status
 - `{{STORY}}` - Current story details
 - `{{PROGRESS}}` - Contents of progress.txt
 
-Customize `prompt.md` in your project root to change agent behavior.
+### Customizing Templates
+
+Override any template by creating it in your project root:
+
+```bash
+# Custom feature prompt
+cp scripts/runner-wiggum/templates/prompt_feature.md prompt_feature.md
+# Edit to taste...
+```
 
 ## Agent Configuration
 

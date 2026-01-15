@@ -133,6 +133,28 @@ class ProgressLogger:
 
         self._append_to_progress(entry)
 
+    def log_review(self, story_id: str, verdict: str, review_output: str) -> None:
+        """Log a review result to the progress file.
+
+        Args:
+            story_id: The story that was reviewed
+            verdict: The review verdict (approve/reject/unknown)
+            review_output: The full review output from the agent
+        """
+        # Determine icon based on verdict
+        icon = "✓" if verdict == "approve" else "✗" if verdict == "reject" else "?"
+        header = f"{icon} Review [{story_id}]: {verdict.upper()}"
+
+        # Truncate review output if too long for readability
+        max_length = 2000
+        if len(review_output) > max_length:
+            truncated = review_output[:max_length] + f"\n... (truncated, {len(review_output) - max_length} chars omitted)"
+        else:
+            truncated = review_output
+
+        entry = f"{header}\n   Review Output:\n{truncated}"
+        self._append_to_progress(entry)
+
     def extract_decisions_from_output(self, output: str) -> list[str]:
         """Extract decision/learning markers from agent output and log them."""
         decisions: list[str] = []
