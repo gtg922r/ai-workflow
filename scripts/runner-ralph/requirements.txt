@@ -1,4 +1,4 @@
-# Ralph Wiggum Agent Runner Dependencies
+# Runner Ralph Dependencies
 #
 # NOTE: If using `uv run ralph.py`, dependencies are managed automatically
 # via inline script metadata (PEP 723). This file is kept for compatibility

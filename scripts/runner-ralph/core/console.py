@@ -1,4 +1,4 @@
-"""Console UI utilities for Ralph Wiggum runner.
+"""Console UI utilities for Runner Ralph.
 
 Provides styled terminal output with timestamps, symbols, box-drawing,
 and color-coded messages for a premium CLI experience.
@@ -110,7 +110,7 @@ class ConsoleConfig:
 
 
 class ConsoleUI:
-    """Enhanced console output for Ralph Wiggum runner.
+    """Enhanced console output for Runner Ralph.
 
     Provides styled, timestamped output with box-drawing characters
     and visual grouping for a premium CLI experience.

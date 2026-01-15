@@ -1,4 +1,4 @@
-"""Git state management for Ralph Wiggum runner.
+"""Git state management for Runner Ralph.
 
 Provides utilities for branch management, commit automation, and clean state verification
 to ensure each story is an atomic, safe unit of work.
@@ -43,7 +43,7 @@ class GitState(Enum):
     """Current state of git operations for a story."""
 
     CLEAN = "clean"  # Working directory clean, on main
-    ON_STORY_BRANCH = "on_story_branch"  # On a wiggum/* branch
+    ON_STORY_BRANCH = "on_story_branch"  # On a ralph/* branch
     HAS_CHANGES = "has_changes"  # Has uncommitted changes
     MERGE_CONFLICT = "merge_conflict"  # Merge conflict detected
 
@@ -77,7 +77,7 @@ class GitManager:
     cleanly to main upon completion.
     """
 
-    BRANCH_PREFIX = "wiggum"
+    BRANCH_PREFIX = "ralph"
 
     def __init__(
         self,

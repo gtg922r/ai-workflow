@@ -1,4 +1,4 @@
-"""Main runner orchestration for Ralph Wiggum agent loops."""
+"""Main runner orchestration for Runner Ralph agent loops."""
 
 from __future__ import annotations
 
@@ -85,7 +85,7 @@ class RunnerStats:
 
 
 class Runner:
-    """Main orchestrator for Ralph Wiggum agent loops."""
+    """Main orchestrator for Runner Ralph agent loops."""
 
     def __init__(self, config: RunnerConfig):
         """Initialize the runner."""
@@ -414,7 +414,7 @@ Progress: {self.prd.completed_stories}/{self.prd.total_stories} stories complete
 
     def _load_review_template(self) -> str:
         """Load the review prompt template."""
-        # Bundled template in runner-wiggum/templates
+        # Bundled template in runner-ralph/templates
         bundled_template = Path(__file__).resolve().parents[1] / "templates" / "review.md"
         if bundled_template.exists():
             return bundled_template.read_text()

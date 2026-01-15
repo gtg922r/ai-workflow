@@ -1,4 +1,4 @@
-"""Progress and session logging for Ralph Wiggum runs."""
+"""Progress and session logging for Runner Ralph."""
 
 from __future__ import annotations
 
