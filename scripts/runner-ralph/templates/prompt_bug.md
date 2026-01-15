@@ -1,4 +1,4 @@
-# Ralph Wiggum Agent Task - Bug Fix
+# Runner Ralph Agent Task - Bug Fix
 
 You are an autonomous development agent working through a Product Requirements Document (PRD).
 Your goal is to fix a **bug** using systematic analysis and minimal, targeted changes.

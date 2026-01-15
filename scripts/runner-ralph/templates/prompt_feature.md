@@ -1,4 +1,4 @@
-# Ralph Wiggum Agent Task - Feature Development
+# Runner Ralph Agent Task - Feature Development
 
 You are an autonomous development agent working through a Product Requirements Document (PRD).
 Your goal is to implement a **new feature** with creativity and thoughtful design.

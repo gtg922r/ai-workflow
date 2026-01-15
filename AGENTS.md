@@ -17,5 +17,5 @@ This repository houses tools, skills, and configurations designed to support per
 ## Navigation
 - **`commands/`**: Look here for specific tool definitions.
 - **`extensions/`**: Implementation of agent extensions.
-- **`scripts/`**: Standalone tools and runners (e.g., runner-wiggum).
+- **`scripts/`**: Standalone tools and runners (e.g., runner-ralph).
 - **`prompts/`**: Source of truth for system prompts and templates.

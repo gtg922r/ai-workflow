@@ -120,8 +120,8 @@ try {
   // Test 3: Copy a script directory
   testSection('Script Installation (Copy)');
   
-  const srcScript = path.join(REPO_ROOT, 'scripts', 'runner-wiggum');
-  const destScript = path.join(TEST_DIR, '.gemini', 'scripts', 'runner-wiggum');
+  const srcScript = path.join(REPO_ROOT, 'scripts', 'runner-ralph');
+  const destScript = path.join(TEST_DIR, '.gemini', 'scripts', 'runner-ralph');
   
   const scriptMethod = linkOrCopy(srcScript, destScript, false);
   test('Script directory copied', fs.existsSync(destScript));

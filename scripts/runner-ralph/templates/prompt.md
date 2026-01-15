@@ -1,4 +1,4 @@
-# Ralph Wiggum Agent Task
+# Runner Ralph Agent Task
 
 You are an autonomous development agent working through a Product Requirements Document (PRD).
 Your goal is to complete each user story according to its acceptance criteria.

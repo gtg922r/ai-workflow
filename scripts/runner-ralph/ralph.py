@@ -6,17 +6,17 @@
 #     "rich>=13.0.0",
 # ]
 # ///
-"""Ralph Wiggum Agent Runner - TUI Application.
+"""Runner Ralph - TUI Application.
 
 A terminal user interface for running autonomous AI agent loops.
 
 Usage:
     # TUI mode (default)
-    uv run scripts/runner-wiggum/ralph.py
-    uv run scripts/runner-wiggum/ralph.py --path /path/to/project
+    uv run scripts/runner-ralph/ralph.py
+    uv run scripts/runner-ralph/ralph.py --path /path/to/project
 
     # Simple console mode (no TUI)
-    uv run scripts/runner-wiggum/ralph.py --no-tui --agent cursor --iterations 3
+    uv run scripts/runner-ralph/ralph.py --no-tui --agent cursor --iterations 3
 """
 
 from __future__ import annotations
@@ -163,7 +163,7 @@ class ConsoleRunner:
 
         # Display banner with configuration
         self.ui.banner(
-            title="Ralph Wiggum",
+            title="Runner Ralph",
             subtitle="Autonomous Agent Runner - Console Mode",
             agent=self.config.agent_type.value,
             iterations=self.config.max_iterations,
@@ -333,7 +333,7 @@ class ConfigScreen(ModalScreen[RunnerConfig | None]):
 
     def compose(self) -> ComposeResult:
         with Container(id="config-dialog"):
-            yield Label("⚙️  Ralph Wiggum Configuration", classes="title")
+            yield Label("⚙️  Runner Ralph Configuration", classes="title")
             yield Rule()
 
             yield Label("Select Agent:")
@@ -458,9 +458,9 @@ class RunHistoryItem(Static):
 
 
 class RalphApp(App):
-    """Main Ralph Wiggum TUI application."""
+    """Main Runner Ralph TUI application."""
 
-    TITLE = "Ralph Wiggum"
+    TITLE = "Runner Ralph"
     SUB_TITLE = "Autonomous Agent Runner"
 
     CSS = """
@@ -778,7 +778,7 @@ class RalphApp(App):
 
         log = self.query_one("#output-log", Log)
         log.clear()
-        log.write_line("[bold]Starting Ralph Wiggum...[/]")
+        log.write_line("[bold]Starting Runner Ralph...[/]")
 
         # Run agent loop (worker handles threading)
         await self._run_agent()
@@ -806,7 +806,7 @@ class RalphApp(App):
 
             log = self.query_one("#output-log", Log)
             log.clear()
-            log.write_line("[bold]Restarting Ralph Wiggum...[/]")
+            log.write_line("[bold]Restarting Runner Ralph...[/]")
 
             await self._run_agent()
 
@@ -841,7 +841,7 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Ralph Wiggum - Autonomous AI Agent Runner"
+        description="Runner Ralph - Autonomous AI Agent Runner"
     )
     parser.add_argument(
         "--path",

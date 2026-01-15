@@ -1,4 +1,4 @@
-"""Core runner components for Ralph Wiggum agent loops."""
+"""Core runner components for Runner Ralph agent loops."""
 
 from .console import (
     BoxChars,

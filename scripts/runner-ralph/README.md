@@ -1,10 +1,10 @@
-# Ralph Wiggum Agent Runner
+# Runner Ralph
 
-A terminal-based autonomous AI agent runner that implements the "Ralph Wiggum" loop pattern for AI-driven development.
+A terminal-based autonomous AI agent runner that implements the "Runner Ralph" loop pattern for AI-driven development.
 
-## What is Ralph Wiggum?
+## What is Runner Ralph?
 
-The "Ralph Wiggum" approach (named after the Simpsons character) is a technique for running AI coding agents in an autonomous loop until development tasks are complete. The key insight is:
+The "Runner Ralph" approach (inspired by the Simpsons character, with better alliteration) is a technique for running AI coding agents in an autonomous loop until development tasks are complete. The key insight is:
 
 > **Each iteration starts fresh, reads the same on-disk state, and commits work for one story at a time.**
 
@@ -48,7 +48,7 @@ curl https://cursor.com/install -fsS | bash
 
 Copy the runner to your project:
 ```bash
-cp -r /path/to/runner-wiggum /your/project/scripts/
+cp -r /path/to/runner-ralph /your/project/scripts/
 ```
 
 Create your PRD file (`prd.json`):
@@ -79,7 +79,7 @@ Optionally customize `prompt.md` and `AGENTS.md` for your project.
 From your project directory, run:
 
 ```bash
-uv run scripts/runner-wiggum/ralph.py
+uv run scripts/runner-ralph/ralph.py
 ```
 
 That's it! `uv` automatically handles Python 3.11+, the virtual environment, and dependencies.
@@ -87,14 +87,14 @@ That's it! `uv` automatically handles Python 3.11+, the virtual environment, and
 Or specify a different project path:
 
 ```bash
-uv run scripts/runner-wiggum/ralph.py --path /path/to/your/project
+uv run scripts/runner-ralph/ralph.py --path /path/to/your/project
 ```
 
 **Alternative:** Make the script directly executable:
 
 ```bash
-chmod +x scripts/runner-wiggum/ralph.py
-./scripts/runner-wiggum/ralph.py
+chmod +x scripts/runner-ralph/ralph.py
+./scripts/runner-ralph/ralph.py
 ```
 
 ## TUI Controls
@@ -131,7 +131,7 @@ your-project/
 │   ├── story-1.md
 │   └── story-2.md
 └── scripts/
-    └── runner-wiggum/
+    └── runner-ralph/
         ├── ralph.py         # TUI/CLI entry point
         ├── core/
         │   ├── runner.py    # Main orchestration
@@ -149,7 +149,7 @@ your-project/
 
 1. **Load PRD** - Read user stories from `prd.json`
 2. **Check git state** - Ensure working directory is clean
-3. **Create branch** - Switch to `wiggum/{story-id}` branch
+3. **Create branch** - Switch to `ralph/{story-id}` branch
 4. **Initialize worklog** - Create per-story work log file
 5. **Build prompt** - Combine template with story context and progress history
 6. **Run agent** - Execute the AI agent in headless mode
@@ -216,7 +216,7 @@ The runner automatically manages git branches to keep each story as an atomic, s
 ### Branch Workflow
 
 1. **Pre-flight check** - Verifies working directory is clean before starting
-2. **Story branches** - Creates `wiggum/{story-id}` branch for each story
+2. **Story branches** - Creates `ralph/{story-id}` branch for each story
 3. **Automatic commits** - On story completion, stages all changes and commits with title
 4. **Merge to main** - Merges completed story branch back to main, deletes branch
 5. **Failure recovery** - Offers to hard reset branch on failure/abort
@@ -362,7 +362,7 @@ Override any template by creating it in your project root:
 
 ```bash
 # Custom feature prompt
-cp scripts/runner-wiggum/templates/prompt_feature.md prompt_feature.md
+cp scripts/runner-ralph/templates/prompt_feature.md prompt_feature.md
 # Edit to taste...
 ```
 
