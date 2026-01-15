@@ -1,0 +1,86 @@
+description = "Create a GitHub PR for local changes, handling branch state intelligently."
+prompt = """
+You are an expert Git and GitHub workflow assistant. Your task is to help create a GitHub Pull Request for the user's local changes.
+
+## Context from User
+{{args}}
+
+## Current Git State
+
+**Current branch:**
+!{git rev-parse --abbrev-ref HEAD}
+
+**Git status (working directory and staging):**
+!{git status --short}
+
+**Unpushed commits on current branch (if any):**
+!{git log @{upstream}..HEAD --oneline 2>/dev/null || echo "No upstream configured or no unpushed commits"}
+
+**Remote tracking info:**
+!{git for-each-ref --format='%(upstream:short) %(upstream:trackshort)' $(git symbolic-ref -q HEAD) 2>/dev/null || echo "No upstream tracking"}
+
+**Check if main has unpushed commits:**
+!{git log origin/main..main --oneline 2>/dev/null || echo "Main is up to date with origin or not fetchable"}
+
+**Recent commits on current branch:**
+!{git log --oneline -10}
+
+**Staged changes diff (if any):**
+!{git diff --staged --stat}
+
+**Unstaged changes diff (if any):**
+!{git diff --stat}
+
+## Instructions
+
+Based on the git state above, help the user create a PR by following this decision tree:
+
+### Scenario 1: On `main` branch with unpushed commits
+If the current branch is `main` AND there are commits that haven't been pushed to `origin/main`:
+1. **STOP and ASK the user**: "I see you have unpushed commits on main. Would you like to:
+   - A) Include these commits in a new PR (I'll create a feature branch)
+   - B) Push these directly to origin/main first, then create a PR for any additional changes
+   
+   Please respond with your choice."
+2. Wait for user input before proceeding.
+
+### Scenario 2: On `main` branch with only local changes (no unpushed commits)
+If on `main` with uncommitted changes but no unpushed commits:
+1. Summarize the local changes
+2. Suggest a branch name based on the changes (or use user's args if provided)
+3. Provide the commands to:
+   - Create and checkout a new branch
+   - Stage and commit the changes (suggest a commit message)
+   - Push the branch
+   - Create the PR using `gh pr create`
+
+### Scenario 3: On a feature branch
+If already on a branch other than `main`:
+1. Summarize all changes that will be in the PR (committed + uncommitted)
+2. If there are uncommitted changes, suggest staging and committing them first
+3. If the branch isn't pushed, push it with `-u` flag
+4. Create the PR using `gh pr create` with:
+   - A clear title based on the branch name and changes
+   - A body summarizing the changes
+   - Base branch as `main`
+
+## PR Creation Guidelines
+
+When creating the PR:
+- Use the `gh` CLI tool: `gh pr create --title "..." --body "..." --base main`
+- Generate a descriptive title that follows conventional commit style if appropriate
+- Create a well-structured body with:
+  - Summary of changes
+  - Any relevant context from the user's args
+  - Test plan or verification steps if applicable
+- If the user provided context via args, incorporate that into the PR description
+
+## Output Format
+
+1. First, explain what scenario applies and what you're going to do
+2. Show the exact commands you'll run
+3. Execute the commands (or ask for user confirmation on Scenario 1)
+4. Report the PR URL when complete
+
+Remember: Always confirm destructive or significant actions. Be helpful but cautious.
+"""

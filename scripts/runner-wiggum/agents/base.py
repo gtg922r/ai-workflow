@@ -222,6 +222,46 @@ class AgentBackend(ABC):
         except Exception as e:
             return "", -1, str(e)
 
+    async def _run_subprocess_with_stdin(
+        self,
+        cmd: list[str],
+        *,
+        stdin_data: str,
+        cli_label: str,
+        env: dict[str, str] | None = None,
+    ) -> tuple[str, int, str | None]:
+        """Run the agent CLI subprocess with stdin input.
+
+        This avoids shell escaping issues when passing prompts with special chars.
+        """
+        try:
+            process = await asyncio.create_subprocess_exec(
+                *cmd,
+                stdin=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT,
+                cwd=self.config.working_dir,
+                env=env,
+            )
+
+            try:
+                stdout, _ = await asyncio.wait_for(
+                    process.communicate(input=stdin_data.encode("utf-8")),
+                    timeout=self.config.timeout_seconds,
+                )
+                output = stdout.decode("utf-8", errors="replace")
+                exit_code = process.returncode or 0
+                return output, exit_code, None
+            except asyncio.TimeoutError:
+                process.kill()
+                await process.wait()
+                return "", -1, f"Timeout after {self.config.timeout_seconds}s"
+
+        except FileNotFoundError:
+            return "", -1, f"{cli_label} executable not found"
+        except Exception as e:
+            return "", -1, str(e)
+
     def _extract_tokens(self, output: str) -> int | None:
         """Extract token count from output if present."""
         patterns = [

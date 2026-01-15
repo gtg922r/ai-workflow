@@ -1,16 +1,16 @@
 {
-    "projectName": "ai-workflow",
-    "branchName": "main",
-    "userStories": [
-      {
-        "id": "story-1",
-        "title": "Create a gemini command for pull a PR for local changes",
-        "description": "The command should be able to pull a github PR for changes from the main branch to the current branch. If in a branch already, PR should include local changes on top of the branch. If not on a branch, then PR should be any local changes. If there have been commits to main that have not been pusehd to origin, then ask the user if those should be part of the PR first, or if they should just be pushed straight to origin",
-        "acceptanceCriteria": [
-          "The command should be able to pull a github PR for changes from the main branch to the current branch. If in a branch already, PR should include local changes on top of the branch. If not on a branch, then PR should be any local changes. If there have been commits to main that have not been pusehd to origin, then ask the user if those should be part of the PR first, or if they should just be pushed straight to origin",
-          "The command should use any passed args to add clarity as to the scope of the PR"
-        ],
-        "passes": false
-      }
-    ]
-  }
+  "projectName": "ai-workflow",
+  "branchName": "main",
+  "userStories": [
+    {
+      "id": "story-1",
+      "title": "Create a gemini command for pull a PR for local changes",
+      "description": "The command should be able to pull a github PR for changes from the main branch to the current branch. If in a branch already, PR should include local changes on top of the branch. If not on a branch, then PR should be any local changes. If there have been commits to main that have not been pusehd to origin, then ask the user if those should be part of the PR first, or if they should just be pushed straight to origin",
+      "acceptanceCriteria": [
+        "The command should be able to pull a github PR for changes from the main branch to the current branch. If in a branch already, PR should include local changes on top of the branch. If not on a branch, then PR should be any local changes. If there have been commits to main that have not been pusehd to origin, then ask the user if those should be part of the PR first, or if they should just be pushed straight to origin",
+        "The command should use any passed args to add clarity as to the scope of the PR"
+      ],
+      "passes": false
+    }
+  ]
+}

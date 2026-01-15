@@ -11,8 +11,12 @@
 A terminal user interface for running autonomous AI agent loops.
 
 Usage:
+    # TUI mode (default)
     uv run scripts/runner-wiggum/ralph.py
     uv run scripts/runner-wiggum/ralph.py --path /path/to/project
+
+    # Simple console mode (no TUI)
+    uv run scripts/runner-wiggum/ralph.py --no-tui --agent cursor --iterations 3
 """
 
 from __future__ import annotations
@@ -27,8 +31,188 @@ if str(_script_dir) not in sys.path:
 
 import asyncio
 
+from agents.base import AgentResult, AgentType
+from core.controller import RunnerCallbacks, RunnerController
+from core.prd import PRD, Story
+from core.runner import RunnerConfig, RunnerState
+
+
+# =============================================================================
+# Console Mode (no TUI) - Simple logging runner
+# =============================================================================
+
+
+class ConsoleRunner:
+    """Simple console-based runner that logs directly to stdout."""
+
+    def __init__(self, project_path: Path, config: RunnerConfig, verbose: bool = False):
+        self.project_path = project_path
+        self.config = config
+        self.controller = RunnerController(project_path)
+        self.verbose = verbose
+
+    def _on_state_change(self, state: RunnerState) -> None:
+        from rich.console import Console
+
+        console = Console()
+        style = {
+            RunnerState.IDLE: "dim",
+            RunnerState.RUNNING: "green",
+            RunnerState.PAUSED: "yellow",
+            RunnerState.COMPLETED: "blue",
+            RunnerState.ERROR: "red",
+        }.get(state, "white")
+        console.print(f"[{style}]State: {state.value}[/]")
+
+    def _on_iteration_start(self, iteration: int, story: Story | None) -> None:
+        from rich.console import Console
+        from rich.panel import Panel
+
+        console = Console()
+        story_info = f" - {story.title}" if story else ""
+        console.print()
+        console.print(Panel(f"Iteration {iteration}{story_info}", style="cyan"))
+
+    def _on_iteration_end(self, iteration: int, result: AgentResult) -> None:
+        from rich.console import Console
+
+        console = Console()
+        if result.success:
+            console.print("[green]✓ Completed[/]")
+        else:
+            console.print(f"[red]✗ Failure: {result.error or 'unknown error'}[/]")
+
+        if result.tokens_used:
+            console.print(f"[dim]Tokens: {result.tokens_used:,}[/]")
+        if result.cost:
+            console.print(f"[dim]Cost: ${result.cost:.4f}[/]")
+
+        # Show full output if there's any
+        if result.output and result.output.strip():
+            console.print("[dim]--- Output ---[/]")
+            # Limit output to avoid flooding
+            lines = result.output.strip().split("\n")
+            if len(lines) > 50:
+                for line in lines[:25]:
+                    console.print(f"[dim]{line}[/]")
+                console.print(f"[dim]... ({len(lines) - 50} lines omitted) ...[/]")
+                for line in lines[-25:]:
+                    console.print(f"[dim]{line}[/]")
+            else:
+                for line in lines:
+                    console.print(f"[dim]{line}[/]")
+            console.print("[dim]--- End Output ---[/]")
+        
+        # Show summary
+        console.print(f"Summary: {result.summary}")
+
+    def _on_output(self, text: str) -> None:
+        from rich.console import Console
+
+        console = Console()
+        console.print(text)
+
+    async def run(self) -> None:
+        """Run in console mode."""
+        from rich.console import Console
+
+        console = Console()
+
+        console.print()
+        console.print("[bold]Ralph Wiggum - Console Mode[/]")
+        console.print(f"  Agent: [cyan]{self.config.agent_type.value}[/]")
+        console.print(f"  Iterations: [cyan]{self.config.max_iterations}[/]")
+        console.print(f"  Project: [cyan]{self.project_path}[/]")
+        
+        # Check agent availability
+        from agents.registry import create_agent
+        from agents.base import AgentConfig
+        
+        agent_config = AgentConfig(
+            working_dir=self.project_path,
+            timeout_seconds=self.config.timeout_seconds,
+        )
+        agent = create_agent(self.config.agent_type, agent_config)
+        
+        if not agent.is_available():
+            console.print(f"  [red]ERROR: {self.config.agent_type.value} agent is not available![/]")
+            if self.config.agent_type == AgentType.CURSOR:
+                console.print("  [yellow]Install Cursor CLI with: curl https://cursor.com/install -fsS | bash[/]")
+            return
+        
+        version = agent.get_version()
+        if version:
+            console.print(f"  Version: [cyan]{version}[/]")
+        
+        if self.verbose:
+            console.print(f"  [dim]Verbose mode enabled[/]")
+        
+        console.print()
+
+        # Set up callbacks
+        self.controller.set_callbacks(
+            RunnerCallbacks(
+                on_state_change=self._on_state_change,
+                on_iteration_start=self._on_iteration_start,
+                on_iteration_end=self._on_iteration_end,
+                on_output=self._on_output,
+            )
+        )
+
+        self.controller.configure(self.config)
+
+        # Run
+        try:
+            await self.controller.run()
+        except KeyboardInterrupt:
+            console.print("\n[yellow]Interrupted by user[/]")
+            self.controller.stop()
+        except Exception as e:
+            console.print(f"\n[red]Error: {e}[/]")
+            raise
+
+        console.print()
+        console.print("[bold]Run complete[/]")
+
+        if self.controller.runner:
+            stats = self.controller.runner.stats
+            console.print(f"  Iterations: {stats.iterations_completed}")
+            console.print(f"  Tokens: {stats.total_tokens:,}")
+            console.print(f"  Cost: ${stats.total_cost:.4f}")
+            if stats.errors:
+                console.print(f"  [red]Errors: {len(stats.errors)}[/]")
+                for err in stats.errors:
+                    console.print(f"    - {err}")
+
+
+def run_console_mode(
+    project_path: Path,
+    agent_type: AgentType,
+    max_iterations: int,
+    timeout: int,
+    verbose: bool = False,
+) -> None:
+    """Run the agent in simple console mode (no TUI)."""
+    config = RunnerConfig(
+        project_path=project_path,
+        agent_type=agent_type,
+        max_iterations=max_iterations,
+        timeout_seconds=timeout,
+        allow_network=True,
+    )
+
+    runner = ConsoleRunner(project_path, config, verbose=verbose)
+    asyncio.run(runner.run())
+
+
+# =============================================================================
+# TUI Mode - Full terminal UI
+# =============================================================================
+
+
+# Import TUI deps at module level for TUI mode
 from rich.text import Text
-from textual import on
+from textual import on, work
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Horizontal, Vertical, VerticalScroll
@@ -47,11 +231,6 @@ from textual.widgets import (
     Static,
     Switch,
 )
-
-from agents.base import AgentResult, AgentType
-from core.controller import RunnerCallbacks, RunnerController
-from core.prd import PRD, Story
-from core.runner import RunnerConfig, RunnerState
 
 
 class ConfigScreen(ModalScreen[RunnerConfig | None]):
@@ -152,10 +331,10 @@ class ConfigScreen(ModalScreen[RunnerConfig | None]):
                 yield Switch(value=False, id="auto-restart")
 
             with Horizontal(classes="buttons"):
-                yield Button("Start", variant="primary", id="start-btn")
-                yield Button("Cancel", variant="default", id="cancel-btn")
+                yield Button("Start", variant="primary", id="config-start-btn")
+                yield Button("Cancel", variant="default", id="config-cancel-btn")
 
-    @on(Button.Pressed, "#start-btn")
+    @on(Button.Pressed, "#config-start-btn")
     def handle_start(self) -> None:
         """Handle start button press."""
         # Get selected agent
@@ -193,7 +372,7 @@ class ConfigScreen(ModalScreen[RunnerConfig | None]):
 
         self.dismiss(config)
 
-    @on(Button.Pressed, "#cancel-btn")
+    @on(Button.Pressed, "#config-cancel-btn")
     def handle_cancel(self) -> None:
         """Handle cancel button press."""
         self.dismiss(None)
@@ -456,41 +635,42 @@ class RalphApp(App):
 
     def _on_runner_state_change(self, state: RunnerState) -> None:
         """Handle runner state changes."""
-        self.call_from_thread(self._update_state_display, state)
+        # Called from async worker (same thread), so call directly
+        self._update_state_display(state)
 
     def _on_iteration_start(self, iteration: int, story: Story | None) -> None:
         """Handle iteration start."""
         self._current_story = story
         log = self.query_one("#output-log", Log)
         story_info = f" - {story.title}" if story else ""
-        self.call_from_thread(log.write_line, f"\n{'='*50}")
-        self.call_from_thread(log.write_line, f"[bold cyan]Iteration {iteration}{story_info}[/]")
-        self.call_from_thread(log.write_line, f"{'='*50}")
+        log.write_line(f"\n{'='*50}")
+        log.write_line(f"[bold cyan]Iteration {iteration}{story_info}[/]")
+        log.write_line(f"{'='*50}")
 
     def _on_iteration_end(self, iteration: int, result: AgentResult) -> None:
         """Handle iteration end."""
         log = self.query_one("#output-log", Log)
 
         if result.success:
-            self.call_from_thread(log.write_line, f"[green]✓ Completed[/]")
+            log.write_line("[green]✓ Completed[/]")
         else:
-            self.call_from_thread(log.write_line, f"[red]✗ Failed: {result.error or 'Unknown error'}[/]")
+            log.write_line(f"[red]✗ Failed: {result.error or 'Unknown error'}[/]")
 
         if result.tokens_used:
-            self.call_from_thread(log.write_line, f"[dim]Tokens: {result.tokens_used:,}[/]")
+            log.write_line(f"[dim]Tokens: {result.tokens_used:,}[/]")
         if result.cost:
-            self.call_from_thread(log.write_line, f"[dim]Cost: ${result.cost:.4f}[/]")
+            log.write_line(f"[dim]Cost: ${result.cost:.4f}[/]")
 
         # Add to history
         self._history.append((iteration, result, self._current_story))
-        self.call_from_thread(self._update_history_display)
-        self.call_from_thread(self._update_stats_display)
-        self.call_from_thread(self._update_prd_display)
+        self._update_history_display()
+        self._update_stats_display()
+        self._update_prd_display()
 
     def _on_output(self, text: str) -> None:
         """Handle output from runner."""
         log = self.query_one("#output-log", Log)
-        self.call_from_thread(log.write_line, text)
+        log.write_line(text)
 
     def _update_history_display(self) -> None:
         """Update the run history display."""
@@ -505,9 +685,9 @@ class RalphApp(App):
         """Run the agent loop."""
         await self.controller.run()
 
-    @on(Button.Pressed, "#start-btn")
-    async def action_start(self) -> None:
-        """Start the agent runner."""
+    @work(exclusive=True)
+    async def _show_config_and_start(self) -> None:
+        """Worker method to show config screen and start the agent."""
         # Get available agents
         available_agents = self.controller.get_available_agents()
 
@@ -542,8 +722,13 @@ class RalphApp(App):
         log.clear()
         log.write_line("[bold]Starting Ralph Wiggum...[/]")
 
-        # Run in background
-        self._run_task = asyncio.create_task(self._run_agent())
+        # Run agent loop (worker handles threading)
+        await self._run_agent()
+
+    @on(Button.Pressed, "#start-btn")
+    def action_start(self) -> None:
+        """Start the agent runner (triggered by button or 's' key)."""
+        self._show_config_and_start()
 
     @on(Button.Pressed, "#pause-btn")
     def action_pause(self) -> None:
@@ -553,9 +738,9 @@ class RalphApp(App):
             log = self.query_one("#output-log", Log)
             log.write_line("[yellow]Pause requested...[/]")
 
-    @on(Button.Pressed, "#restart-btn")
-    async def action_restart(self) -> None:
-        """Restart the agent runner."""
+    @work(exclusive=True)
+    async def _restart_agent(self) -> None:
+        """Worker method to restart the agent."""
         if self.controller.runner:
             self.controller.reset()
             self._history.clear()
@@ -565,11 +750,16 @@ class RalphApp(App):
             log.clear()
             log.write_line("[bold]Restarting Ralph Wiggum...[/]")
 
-            self._run_task = asyncio.create_task(self._run_agent())
+            await self._run_agent()
 
-    @on(Button.Pressed, "#config-btn")
-    async def action_configure(self) -> None:
-        """Open configuration screen."""
+    @on(Button.Pressed, "#restart-btn")
+    def action_restart(self) -> None:
+        """Restart the agent runner (triggered by button or 'r' key)."""
+        self._restart_agent()
+
+    @work(exclusive=True)
+    async def _show_config_only(self) -> None:
+        """Worker method to show config screen for settings only."""
         # Get available agents
         available_agents = self.controller.get_available_agents()
 
@@ -581,6 +771,11 @@ class RalphApp(App):
             self.config = config
             agent_name = self.query_one("#agent-name", Static)
             agent_name.update(config.agent_type.value.title())
+
+    @on(Button.Pressed, "#config-btn")
+    def action_configure(self) -> None:
+        """Open configuration screen (triggered by button or 'c' key)."""
+        self._show_config_only()
 
 
 def main():
@@ -597,10 +792,57 @@ def main():
         default=Path.cwd(),
         help="Project path (default: current directory)",
     )
+    parser.add_argument(
+        "--no-tui",
+        action="store_true",
+        help="Run in simple console mode without the TUI",
+    )
+    parser.add_argument(
+        "--agent",
+        "-a",
+        type=str,
+        choices=["cursor", "claude"],
+        default="cursor",
+        help="Agent to use (default: cursor)",
+    )
+    parser.add_argument(
+        "--iterations",
+        "-n",
+        type=int,
+        default=3,
+        help="Max iterations (default: 3)",
+    )
+    parser.add_argument(
+        "--timeout",
+        "-t",
+        type=int,
+        default=600,
+        help="Timeout per iteration in seconds (default: 600)",
+    )
+    parser.add_argument(
+        "--verbose",
+        "-v",
+        action="store_true",
+        help="Show verbose output including full agent responses",
+    )
     args = parser.parse_args()
 
-    app = RalphApp(project_path=args.path.resolve())
-    app.run()
+    project_path = args.path.resolve()
+
+    if args.no_tui:
+        # Simple console mode
+        agent_type = AgentType.CURSOR if args.agent == "cursor" else AgentType.CLAUDE
+        run_console_mode(
+            project_path=project_path,
+            agent_type=agent_type,
+            max_iterations=args.iterations,
+            timeout=args.timeout,
+            verbose=args.verbose,
+        )
+    else:
+        # Full TUI mode
+        app = RalphApp(project_path=project_path)
+        app.run()
 
 
 if __name__ == "__main__":

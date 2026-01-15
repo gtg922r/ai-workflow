@@ -1,8 +1,11 @@
 """Cursor CLI agent backend.
 
 Updated for Cursor CLI Jan 2026 release.
-See: https://cursor.com/changelog/cli-jan-08-2026
-     https://cursor.com/docs/cli/using
+See: https://cursor.com/cli
+     https://cursor.com/changelog/cli-jan-08-2026
+
+Install the CLI with:
+    curl https://cursor.com/install -fsS | bash
 """
 
 from __future__ import annotations
@@ -17,7 +20,9 @@ class CursorAgent(AgentBackend):
     """Agent backend for Cursor CLI.
 
     The Cursor CLI uses the `agent` command for headless operation.
-    In non-interactive mode (-p/--print), it has full write access automatically.
+    In non-interactive mode (-p/--print), it runs autonomously with full tool access.
+
+    Install with: curl https://cursor.com/install -fsS | bash
     """
 
     agent_type = AgentType.CURSOR
@@ -28,20 +33,19 @@ class CursorAgent(AgentBackend):
         self._cli_path: str | None = None
 
     def is_available(self) -> bool:
-        """Check if Cursor CLI is available."""
+        """Check if Cursor CLI (agent command) is available."""
         return self._find_cli() is not None
 
     def _find_cli(self) -> str | None:
-        """Find the Cursor CLI executable."""
+        """Find the Cursor CLI executable (agent command)."""
         if self._cli_path:
             return self._cli_path
 
-        # The Cursor CLI command is `agent` as of Jan 2026
-        for cli_name in ["agent", "cursor"]:
-            path = shutil.which(cli_name)
-            if path:
-                self._cli_path = path
-                return path
+        # The Cursor CLI command is `agent` (not `cursor` which is just the IDE launcher)
+        path = shutil.which("agent")
+        if path:
+            self._cli_path = path
+            return path
 
         # Check common installation locations
         common_paths = [
@@ -80,18 +84,24 @@ class CursorAgent(AgentBackend):
     def build_command(self, prompt: str) -> list[str]:
         """Build the Cursor CLI command.
 
-        Uses non-interactive mode (-p) which has full write access automatically.
-        Output format is set to JSON for easier parsing.
+        Uses the `agent` command with:
+        - `-p` for print/non-interactive mode (runs autonomously)
+        - `--force` to skip confirmations
+        - `--output-format text` for readable output
         """
         cli = self._find_cli()
         if not cli:
-            raise RuntimeError("Cursor CLI not found")
+            raise RuntimeError(
+                "Cursor CLI (agent) not found. "
+                "Install with: curl https://cursor.com/install -fsS | bash"
+            )
 
         cmd = [
             cli,
-            "-p",  # Print/non-interactive mode (full write access)
-            "--output-format", "text",  # Use text for readable output (json available)
-            prompt,
+            "-p",  # Print/non-interactive mode
+            "--force",  # Skip confirmations for headless operation
+            "--output-format", "text",  # Readable output (json also available)
+            prompt,  # Prompt as positional argument
         ]
 
         # Add any extra arguments
@@ -100,7 +110,7 @@ class CursorAgent(AgentBackend):
         return cmd
 
     async def run(self, prompt: str) -> AgentResult:
-        """Run Cursor with the given prompt."""
+        """Run Cursor agent with the given prompt."""
         try:
             cmd = self.build_command(prompt)
         except RuntimeError as e:
@@ -111,15 +121,15 @@ class CursorAgent(AgentBackend):
                 error=str(e),
             )
 
-        # Set up environment with API key if available
+        # Set up environment
         import os
 
         env = os.environ.copy()
-        # CURSOR_API_KEY should already be set in environment
 
+        # Run the command
         output, exit_code, error = await self._run_subprocess(
             cmd,
-            cli_label="Cursor CLI",
+            cli_label="Cursor CLI (agent)",
             env=env,
         )
         if error:

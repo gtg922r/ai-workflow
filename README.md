@@ -22,6 +22,7 @@ Refer to `AGENTS.md` for detailed operational context and guidelines on how AI a
 ### Gemini
 - **Workflow**
   - `compare-prs`: Compare multiple GitHub PRs and recommend the best one.
+  - `create-pr`: Create a GitHub PR for local changes, intelligently handling branch state (main vs feature branch, unpushed commits).
 
 
 
