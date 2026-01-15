@@ -10,6 +10,43 @@
         "The command should be able to pull a github PR for changes from the main branch to the current branch. If in a branch already, PR should include local changes on top of the branch. If not on a branch, then PR should be any local changes. If there have been commits to main that have not been pusehd to origin, then ask the user if those should be part of the PR first, or if they should just be pushed straight to origin",
         "The command should use any passed args to add clarity as to the scope of the PR"
       ],
+      "passes": true
+    },
+    {
+      "id": "runner-git",
+      "title": "Robust Git State Management",
+      "description": "Automate git branching and committing to ensure every story is an atomic, safe unit of work. This enables 'high velocity' by keeping the main branch clean.",
+      "acceptanceCriteria": [
+        "Runner checks for clean git working directory before starting.",
+        "Runner automatically creates/switches to branch `wiggum/{story_id}` at start of story.",
+        "Upon successful completion (verification + review), Runner stages all changes and commits with Story title. Merge back to local main.",
+        "On failure/reset, offer to hard reset the temporary branch."
+      ],
+      "passes": false
+    },    
+    {
+      "id": "runner-review",
+      "title": "Add Post-Implementation Review Phase",
+      "description": "Implement a 'Reviewer' step in the loop. After the implementing agent finishes (and verification passes), a second pass (or distinct agent role) critiques the code against `AGENTS.md` and best practices.",
+      "acceptanceCriteria": [
+        "Add configuration to enable/disable review phase.",
+        "If enabled, trigger a 'Review' prompt after implementation success.",
+        "Review prompt should see `git diff` and `AGENTS.md`.",
+        "Output of review should be included in progress.txt",
+        "If Reviewer output contains 'REJECT', reopen the story with feedback. If 'APPROVE', complete it."
+      ],
+      "passes": false
+    },
+    {
+      "id": "runner-prompts",
+      "title": "Support Task-Type Specific Prompts",
+      "description": "Allow different prompt strategies for different types of work (feature vs bug vs refactor) to optimize agent focus.",
+      "acceptanceCriteria": [
+        "Add `type` field to `Story` schema (enum: feature, bug, chore, test).",
+        "Update `core/runner.py` to look for `templates/prompt_{type}.md`.",
+        "Create optimized `prompt_feature.md` (creative/expansive) and `prompt_bug.md` (strict/analytic) templates.",
+        "Fall back to `prompt.md` if specific template missing."
+      ],
       "passes": false
     }
   ]

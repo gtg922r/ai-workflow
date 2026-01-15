@@ -1,7 +1,7 @@
-Session: ralph-20260114-161134-6ddc4e
-Started: 2026-01-14T16:11:34.510112
-Last Update: 2026-01-14T16:11:34.510678
+Session: ralph-20260114-231741-48bbce
+Started: 2026-01-14T23:17:41.039433
+Last Update: 2026-01-14T23:17:41.040244
 Total Runs: 1
 
 --- Run History ---
-✗ Run #1 [story-1] (?)
+✗ Run #1 [runner-git] (?)
