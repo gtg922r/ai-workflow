@@ -46,6 +46,29 @@ If you encounter blockers:
 2. Explain what you tried
 3. Suggest potential solutions or workarounds
 
+### Documenting Key Decisions
+
+When you make significant architectural, design, or implementation decisions, document them
+using decision markers so they are preserved for future iterations:
+
+```
+<decision>Brief description of the decision and rationale</decision>
+```
+
+Examples of decisions worth documenting:
+- Choosing between implementation approaches
+- Selecting libraries or patterns
+- Trade-offs made (e.g., simplicity vs performance)
+- Assumptions made about requirements
+
+Similarly, if you discover something important about the codebase or requirements:
+
+```
+<learning>What you learned and why it matters</learning>
+```
+
+These markers are automatically extracted and added to the progress log for future reference.
+
 ### IMPORTANT: Completion Signal
 
 When you have completed the current story and verified all acceptance criteria pass:

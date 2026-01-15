@@ -2,10 +2,15 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+
+# Pattern to extract decisions/learnings from agent output
+DECISION_PATTERN = re.compile(r"<decision>(.*?)</decision>", re.DOTALL | re.IGNORECASE)
+LEARNING_PATTERN = re.compile(r"<learning>(.*?)</learning>", re.DOTALL | re.IGNORECASE)
 
 
 @dataclass
@@ -69,6 +74,17 @@ class ProgressLogger:
         """Path to the session.txt file."""
         return self.project_path / "session.txt"
 
+    def initialize(self) -> None:
+        """Initialize the progress file if it doesn't exist."""
+        if not self.progress_file.exists():
+            header = (
+                f"# Progress Log - {self.session_id}\n"
+                f"# Started: {self.started_at.isoformat()}\n"
+                f"# Project: {self.project_path.name}\n"
+                "---\n"
+            )
+            self.progress_file.write_text(header)
+
     def start_run(self, iteration: int, story_id: str | None = None) -> RunRecord:
         """Start a new run and return the record."""
         record = RunRecord(
@@ -101,7 +117,42 @@ class ProgressLogger:
     def add_learning(self, learning: str) -> None:
         """Add a learning to the progress log."""
         self.learnings.append(learning)
-        self._append_to_progress(learning)
+        self._append_to_progress(f"💡 Learning: {learning}")
+
+    def log_run_completion(self, record: RunRecord) -> None:
+        """Log a run completion to the progress file."""
+        status = "✓ Completed" if record.success else "✗ Failed"
+        story_info = f" [{record.story_id}]" if record.story_id else ""
+        duration = f" ({record.duration_seconds:.1f}s)" if record.duration_seconds else ""
+
+        entry = f"Run #{record.iteration}{story_info}: {status}{duration}"
+        if record.summary:
+            entry += f"\n   Summary: {record.summary}"
+        if record.error:
+            entry += f"\n   Error: {record.error}"
+
+        self._append_to_progress(entry)
+
+    def extract_decisions_from_output(self, output: str) -> list[str]:
+        """Extract decision/learning markers from agent output and log them."""
+        decisions: list[str] = []
+
+        # Extract <decision>...</decision> markers
+        for match in DECISION_PATTERN.finditer(output):
+            decision = match.group(1).strip()
+            if decision:
+                decisions.append(decision)
+                self._append_to_progress(f"📋 Decision: {decision}")
+
+        # Extract <learning>...</learning> markers
+        for match in LEARNING_PATTERN.finditer(output):
+            learning = match.group(1).strip()
+            if learning:
+                decisions.append(learning)
+                self.learnings.append(learning)
+                self._append_to_progress(f"💡 Learning: {learning}")
+
+        return decisions
 
     def _append_to_progress(self, content: str) -> None:
         """Append content to the progress.txt file."""

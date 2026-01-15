@@ -117,6 +117,7 @@ class Runner:
                 session_id=session_id,
                 project_path=self.config.project_path,
             )
+            self.progress.initialize()
 
             # Initialize agent
             agent_config = AgentConfig(
@@ -261,6 +262,12 @@ Progress: {self.prd.completed_stories}/{self.prd.total_stories} stories complete
                     cost=result.cost,
                     error=result.error,
                 )
+                # Log the run completion to progress.txt
+                self.progress.log_run_completion(self._current_run)
+
+                # Extract and log any decisions/learnings from the agent output
+                if result.output:
+                    self.progress.extract_decisions_from_output(result.output)
 
             # Notify iteration end
             if self._on_iteration_end:
