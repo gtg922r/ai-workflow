@@ -2,6 +2,19 @@
 
 This repository serves as a centralized hub for personal AI agent workflows, tools, and configurations. It organizes resources for various AI assistants to enhance productivity and automation.
 
+## Quick Install
+
+Install components directly via NPX:
+
+```bash
+npx github:ryancash/ai-workflow
+```
+
+The interactive installer will guide you through:
+- Selecting a target agent (Gemini CLI, Claude Code, or OpenAI Codex)
+- Choosing installation scope (global user profile or local project)
+- Picking which commands, skills, and scripts to install
+
 ## Structure
 
 - **`commands/`**: Agent or provider-specific command specifications (e.g., `commands/gemini/`).
@@ -13,7 +26,7 @@ This repository serves as a centralized hub for personal AI agent workflows, too
   - **`skills/skill-creator/`**: A meta-skill that helps an agent author new, spec-compliant Agent Skills (with progressive disclosure) and provides Gemini/Claude/Codex installation guidance.
 - **`prompts/`**: A collection of reusable system and task-specific prompts.
 
-## Usage
+## Manual Usage
 
 Refer to `AGENTS.md` for detailed operational context and guidelines on how AI agents should interact with this repository.
 
