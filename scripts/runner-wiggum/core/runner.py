@@ -22,6 +22,7 @@ from .git import (
 )
 from .prd import PRD, Story, StoryType
 from .progress import ProgressLogger, RunRecord
+from .worklog import WorkLog, WorkLogEntry, WorkLogManager
 
 # Pattern to extract review verdict from agent output
 VERDICT_PATTERN = re.compile(r"<verdict>(APPROVE|REJECT)</verdict>", re.IGNORECASE)
@@ -95,8 +96,10 @@ class Runner:
         self.progress: ProgressLogger | None = None
         self.agent: AgentBackend | None = None
         self.git: GitManager | None = None
+        self.worklog_manager: WorkLogManager | None = None
         self._current_run: RunRecord | None = None
         self._current_story: Story | None = None
+        self._current_worklog: WorkLog | None = None
         self._stop_requested = False
 
         # Callbacks for TUI updates
@@ -104,8 +107,9 @@ class Runner:
         self._on_iteration_start: Callable[[int, Story | None], None] | None = None
         self._on_iteration_end: Callable[[int, AgentResult], None] | None = None
         self._on_output: Callable[[str], None] | None = None
-        self._on_git_dirty: Callable[[str], bool] | None = None  # Return True to continue anyway
+        self._on_git_dirty: Callable[[str], bool] | None = None  # Return True to disable git and continue
         self._on_git_reset_prompt: Callable[[str], bool] | None = None  # Return True to reset
+        self._on_worklog_entry: Callable[[str, WorkLogEntry], None] | None = None  # (story_id, entry)
 
     def set_callbacks(
         self,
@@ -115,6 +119,7 @@ class Runner:
         on_output: Callable[[str], None] | None = None,
         on_git_dirty: Callable[[str], bool] | None = None,
         on_git_reset_prompt: Callable[[str], bool] | None = None,
+        on_worklog_entry: Callable[[str, WorkLogEntry], None] | None = None,
     ) -> None:
         """Set callbacks for runner events.
 
@@ -123,8 +128,9 @@ class Runner:
             on_iteration_start: Called at the start of each iteration
             on_iteration_end: Called at the end of each iteration
             on_output: Called for general output messages
-            on_git_dirty: Called when working directory is dirty. Return True to continue anyway.
+            on_git_dirty: Called when working directory is dirty. Return True to disable git and continue.
             on_git_reset_prompt: Called on failure to prompt for branch reset. Return True to reset.
+            on_worklog_entry: Called when a worklog entry is added. Args: (story_id, entry)
         """
         self._on_state_change = on_state_change
         self._on_iteration_start = on_iteration_start
@@ -132,6 +138,7 @@ class Runner:
         self._on_output = on_output
         self._on_git_dirty = on_git_dirty
         self._on_git_reset_prompt = on_git_reset_prompt
+        self._on_worklog_entry = on_worklog_entry
 
     def _set_state(self, state: RunnerState) -> None:
         """Update state and notify callback."""
@@ -157,6 +164,12 @@ class Runner:
                 project_path=self.config.project_path,
             )
             self.progress.initialize()
+
+            # Initialize worklog manager
+            self.worklog_manager = WorkLogManager(
+                project_path=self.config.project_path,
+                on_entry=self._on_worklog_entry,
+            )
 
             # Initialize git manager if enabled
             if self.config.git_enabled:
@@ -200,8 +213,12 @@ class Runner:
     def _check_git_clean_state(self) -> bool:
         """Check if git working directory is clean.
 
+        When dirty state is detected:
+        - If callback returns True: disable git management and continue
+        - If callback returns False: abort the run
+
         Returns:
-            True if clean or user chose to continue, False to abort
+            True if clean or user chose to disable git, False to abort
         """
         if not self.git:
             return True
@@ -213,8 +230,10 @@ class Runner:
             # Callback to ask user what to do
             if self._on_git_dirty:
                 if self._on_git_dirty(e.status):
+                    # User chose to disable git and continue
                     if self._on_output:
-                        self._on_output("Continuing with dirty working directory...")
+                        self._on_output("Disabling git management for this session...")
+                    self.git = None
                     return True
                 else:
                     self.stats.errors.append("Aborted: working directory not clean")
@@ -525,16 +544,27 @@ End with: `<verdict>APPROVE</verdict>` or `<verdict>REJECT</verdict>`
             story = self.prd.get_next_incomplete_story() if self.prd else None
             self._current_story = story
 
-            # Setup git branch for new story (only when story changes)
+            # Setup git branch and worklog for new story (only when story changes)
             if story and story.id != last_story_id:
                 if not self._setup_story_branch(story):
                     self._set_state(RunnerState.ERROR)
                     return
                 last_story_id = story.id
 
+                # Create/get worklog for this story
+                if self.worklog_manager:
+                    self._current_worklog = self.worklog_manager.get_or_create(
+                        story.id, story.title
+                    )
+                    self._current_worklog.log_progress(f"Starting work on story: {story.title}")
+
             # Notify iteration start
             if self._on_iteration_start:
                 self._on_iteration_start(iteration, story)
+
+            # Log iteration start to worklog
+            if self._current_worklog:
+                self._current_worklog.log_progress(f"Beginning iteration {iteration}")
 
             # Start run record
             if self.progress:
@@ -582,6 +612,13 @@ End with: `<verdict>APPROVE</verdict>` or `<verdict>REJECT</verdict>`
                 if result.output:
                     self.progress.extract_decisions_from_output(result.output)
 
+            # Extract decisions/learnings to worklog
+            if self._current_worklog and result.output:
+                self._current_worklog.extract_from_output(result.output)
+                self._current_worklog.log_progress(
+                    f"Iteration {iteration} completed: {result.summary[:100]}"
+                )
+
             # Notify iteration end
             if self._on_iteration_end:
                 self._on_iteration_end(iteration, result)
@@ -605,6 +642,12 @@ End with: `<verdict>APPROVE</verdict>` or `<verdict>REJECT</verdict>`
                         if self._on_output:
                             self._on_output(f"Review REJECTED for {story.id} - reopening story")
                         review_passed = False
+
+                        # Log rejection to worklog
+                        if self._current_worklog:
+                            self._current_worklog.log_error(
+                                f"Review rejected - story reopened for revision"
+                            )
 
                         # Reopen the story with feedback
                         self.prd.reopen_story(story.id, review_output)
@@ -630,6 +673,28 @@ End with: `<verdict>APPROVE</verdict>` or `<verdict>REJECT</verdict>`
                 if self._on_output:
                     self._on_output(f"Story {story.id} marked complete!")
 
+                # Get worklog summary before finalizing
+                worklog_summary = None
+                if self._current_worklog:
+                    worklog_summary = self._current_worklog.get_summary()
+
+                # Log story completion to progress.txt with worklog summary
+                if self.progress:
+                    self.progress.log_story_completion(
+                        story.id,
+                        story.title,
+                        worklog_summary=worklog_summary,
+                    )
+
+                # Finalize worklog for completed story
+                if self.worklog_manager:
+                    self.worklog_manager.finalize_story(
+                        story.id,
+                        success=True,
+                        summary=f"Story completed successfully after {iteration} iteration(s)",
+                    )
+                self._current_worklog = None
+
                 # Reset last_story_id so next story gets its own branch
                 last_story_id = None
 
@@ -638,6 +703,10 @@ End with: `<verdict>APPROVE</verdict>` or `<verdict>REJECT</verdict>`
                 self.stats.errors.append(result.error)
                 if self._on_output:
                     self._on_output(f"Error: {result.error}")
+
+                # Log error to worklog
+                if self._current_worklog:
+                    self._current_worklog.log_error(result.error)
 
                 # Offer to reset branch on failure
                 if story and not result.complete_signal:

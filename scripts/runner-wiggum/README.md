@@ -18,6 +18,7 @@ This approach is "deterministically bad in an undeterministic world" — meaning
 - **Progress tracking** - Session stats, run history, and cost tracking
 - **Git state management** - Automatic branching, commits, and merging per story
 - **Post-implementation review** - Optional reviewer phase to critique code before merging
+- **Work logs** - Per-story append-only logs with real-time UI updates
 - **Sandboxed execution** - Agents run with restricted permissions
 - **Easy restart** - Continue where you left off
 
@@ -126,6 +127,9 @@ your-project/
 ├── AGENTS.md          # Project context for agents (optional)
 ├── progress.txt       # Append-only learnings (auto-generated)
 ├── session.txt        # Current session state (auto-generated)
+├── worklogs/          # Per-story work logs (auto-generated)
+│   ├── story-1.md
+│   └── story-2.md
 └── scripts/
     └── runner-wiggum/
         ├── ralph.py         # TUI/CLI entry point
@@ -134,7 +138,8 @@ your-project/
         │   ├── controller.py # TUI controller layer
         │   ├── git.py       # Git state management
         │   ├── prd.py       # PRD parsing
-        │   └── progress.py  # Progress logging
+        │   ├── progress.py  # Progress logging
+        │   └── worklog.py   # Per-story work logs
         ├── agents/          # Agent backends
         ├── templates/       # Example templates
         └── requirements.txt
@@ -145,13 +150,64 @@ your-project/
 1. **Load PRD** - Read user stories from `prd.json`
 2. **Check git state** - Ensure working directory is clean
 3. **Create branch** - Switch to `wiggum/{story-id}` branch
-4. **Build prompt** - Combine template with story context and progress history
-5. **Run agent** - Execute the AI agent in headless mode
-6. **Parse output** - Look for completion signal (`<promise>COMPLETE</promise>`)
-7. **Review phase** (optional) - Run a reviewer pass to critique the implementation
-8. **Commit & merge** - Stage all changes, commit with story title, merge to main
-9. **Update state** - Mark story complete, save progress
-10. **Repeat** - Continue until all stories pass or max iterations reached
+4. **Initialize worklog** - Create per-story work log file
+5. **Build prompt** - Combine template with story context and progress history
+6. **Run agent** - Execute the AI agent in headless mode
+7. **Log progress** - Record decisions and learnings to worklog in real-time
+8. **Parse output** - Look for completion signal (`<promise>COMPLETE</promise>`)
+9. **Review phase** (optional) - Run a reviewer pass to critique the implementation
+10. **Commit & merge** - Stage all changes, commit with story title, merge to main
+11. **Update state** - Mark story complete, save progress with worklog summary
+12. **Repeat** - Continue until all stories pass or max iterations reached
+
+## Work Logs
+
+The runner maintains per-story work logs that capture real-time progress, decisions, and learnings during each iteration.
+
+### Features
+
+- **Append-only** - All updates are appended, never overwritten
+- **Real-time UI** - Updates appear in console/TUI as they happen
+- **Per-story files** - Each story gets its own worklog in `worklogs/{story-id}.md`
+- **Structured extraction** - Automatically extracts `<decision>` and `<learning>` tags from agent output
+- **Progress.txt integration** - Worklog summaries are included when stories complete
+
+### Work Log Format
+
+```markdown
+# Work Log: story-1
+## Implement user authentication
+
+Started: 2026-01-14 14:30:00
+
+---
+
+## Progress
+
+[14:30:05] → Starting work on story: Implement user authentication
+[14:30:05] → Beginning iteration 1
+[14:35:42] → Iteration 1 completed: Implementation in progress...
+- **Decision** [14:35:42]: Used bcrypt for password hashing due to its adaptive nature
+- **Learning** [14:35:42]: Express middleware order matters for auth routes
+
+---
+
+## Summary
+
+**Status**: Completed successfully
+**Duration**: 342.5s
+```
+
+### Extracting Decisions
+
+Agents can emit structured markers that are automatically captured:
+
+```
+<decision>Used JWT tokens instead of sessions for stateless auth</decision>
+<learning>The existing user model already had password fields</learning>
+```
+
+These are logged to both the worklog and `progress.txt`.
 
 ## Git State Management
 
@@ -179,7 +235,8 @@ uv run ralph.py --main-branch develop
 
 If the working directory has uncommitted changes at startup, the runner will:
 - Display the current changes
-- Prompt to continue anyway (console mode) or fail (TUI mode by default)
+- Explain that git management requires a clean state
+- Offer to either abort (so you can commit/stash) or disable git for this run
 
 ### Failure Recovery
 

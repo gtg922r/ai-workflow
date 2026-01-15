@@ -10,6 +10,7 @@ from agents.base import AgentResult, AgentType
 from agents.registry import list_available_agents
 from .prd import Story
 from .runner import Runner, RunnerConfig, RunnerState
+from .worklog import WorkLogEntry
 
 
 @dataclass
@@ -22,6 +23,7 @@ class RunnerCallbacks:
     on_output: Callable[[str], None] | None = None
     on_git_dirty: Callable[[str], bool] | None = None
     on_git_reset_prompt: Callable[[str], bool] | None = None
+    on_worklog_entry: Callable[[str, WorkLogEntry], None] | None = None
 
 
 class RunnerController:
@@ -53,6 +55,7 @@ class RunnerController:
                 on_output=self.callbacks.on_output,
                 on_git_dirty=self.callbacks.on_git_dirty,
                 on_git_reset_prompt=self.callbacks.on_git_reset_prompt,
+                on_worklog_entry=self.callbacks.on_worklog_entry,
             )
 
     async def run(self) -> None:

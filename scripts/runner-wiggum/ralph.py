@@ -35,6 +35,7 @@ from agents.base import AgentResult, AgentType
 from core.controller import RunnerCallbacks, RunnerController
 from core.prd import PRD, Story
 from core.runner import RunnerConfig, RunnerState
+from core.worklog import WorkLogEntry
 
 
 # =============================================================================
@@ -65,7 +66,10 @@ class ConsoleRunner:
         console.print(f"[{style}]State: {state.value}[/]")
 
     def _on_git_dirty(self, status: str) -> bool:
-        """Handle dirty working directory - prompt user."""
+        """Handle dirty working directory - prompt user.
+        
+        Returns True to disable git and continue, False to abort.
+        """
         from rich.console import Console
         from rich.prompt import Confirm
 
@@ -74,8 +78,11 @@ class ConsoleRunner:
         console.print("[yellow]Warning: Working directory has uncommitted changes:[/]")
         console.print(f"[dim]{status}[/]")
         console.print()
+        console.print("[dim]Git management requires a clean working directory to create branches and commits.[/]")
+        console.print("[dim]You can either abort and commit/stash your changes, or disable git for this run.[/]")
+        console.print()
 
-        return Confirm.ask("Continue anyway?", default=False)
+        return Confirm.ask("Disable git management and continue?", default=False)
 
     def _on_git_reset_prompt(self, message: str) -> bool:
         """Handle failure reset prompt."""
@@ -137,6 +144,14 @@ class ConsoleRunner:
         console = Console()
         console.print(text)
 
+    def _on_worklog_entry(self, story_id: str, entry: WorkLogEntry) -> None:
+        """Handle worklog entry updates - display in console."""
+        from rich.console import Console
+
+        console = Console()
+        # Format and display the worklog entry
+        console.print(f"[dim]{entry.format_line()}[/]")
+
     async def run(self) -> None:
         """Run in console mode."""
         from rich.console import Console
@@ -187,6 +202,7 @@ class ConsoleRunner:
                 on_output=self._on_output,
                 on_git_dirty=self._on_git_dirty,
                 on_git_reset_prompt=self._on_git_reset_prompt,
+                on_worklog_entry=self._on_worklog_entry,
             )
         )
 
@@ -715,6 +731,11 @@ class RalphApp(App):
         log = self.query_one("#output-log", Log)
         log.write_line(text)
 
+    def _on_worklog_entry(self, story_id: str, entry: WorkLogEntry) -> None:
+        """Handle worklog entry updates - display in log panel."""
+        log = self.query_one("#output-log", Log)
+        log.write_line(f"[dim]{entry.format_line()}[/]")
+
     def _update_history_display(self) -> None:
         """Update the run history display."""
         history_list = self.query_one("#history-list", Container)
@@ -755,6 +776,7 @@ class RalphApp(App):
                 on_iteration_start=self._on_iteration_start,
                 on_iteration_end=self._on_iteration_end,
                 on_output=self._on_output,
+                on_worklog_entry=self._on_worklog_entry,
             )
         )
         self.controller.configure(config)

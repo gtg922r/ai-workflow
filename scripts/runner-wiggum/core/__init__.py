@@ -13,10 +13,12 @@ from .git import (
 from .prd import PRD, Story, StoryType
 from .progress import ProgressLogger, RunRecord
 from .runner import Runner, RunnerConfig, RunnerState, RunnerStats
+from .worklog import EntryType, WorkLog, WorkLogEntry, WorkLogManager
 
 __all__ = [
     "BranchError",
     "DirtyWorkingDirectoryError",
+    "EntryType",
     "GitError",
     "GitManager",
     "GitState",
@@ -33,4 +35,7 @@ __all__ = [
     "RunnerStats",
     "Story",
     "StoryType",
+    "WorkLog",
+    "WorkLogEntry",
+    "WorkLogManager",
 ]

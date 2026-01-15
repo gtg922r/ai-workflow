@@ -155,6 +155,28 @@ class ProgressLogger:
         entry = f"{header}\n   Review Output:\n{truncated}"
         self._append_to_progress(entry)
 
+    def log_story_completion(
+        self,
+        story_id: str,
+        story_title: str,
+        worklog_summary: str | None = None,
+    ) -> None:
+        """Log a story completion with optional worklog summary.
+
+        Args:
+            story_id: The completed story's ID
+            story_title: The story title
+            worklog_summary: Optional summary from the worklog
+        """
+        header = f"✓ Story Completed [{story_id}]: {story_title}"
+
+        if worklog_summary:
+            entry = f"{header}\n{worklog_summary}"
+        else:
+            entry = header
+
+        self._append_to_progress(entry)
+
     def extract_decisions_from_output(self, output: str) -> list[str]:
         """Extract decision/learning markers from agent output and log them."""
         decisions: list[str] = []
