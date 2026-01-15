@@ -96,10 +96,15 @@ class GitManager:
         self.main_branch = main_branch
         self._on_output = on_output
 
-    def _log(self, message: str) -> None:
-        """Log a message if callback is set."""
+    def _log(self, message: str, symbol: str = "📦") -> None:
+        """Log a message if callback is set.
+
+        Args:
+            message: The message to log
+            symbol: Unicode symbol prefix (default: package emoji for git)
+        """
         if self._on_output:
-            self._on_output(f"[git] {message}")
+            self._on_output(f"[git] {symbol} {message}")
 
     def _run_git(
         self,
@@ -232,17 +237,17 @@ class GitManager:
         current = self.get_current_branch()
 
         if current == branch_name:
-            self._log(f"Already on branch {branch_name}")
+            self._log(f"Already on branch {branch_name}", "✓")
             return branch_name
 
         try:
             if self.branch_exists(branch_name):
                 # Branch exists, switch to it
-                self._log(f"Switching to existing branch {branch_name}")
+                self._log(f"Switching to existing branch {branch_name}", "🔀")
                 self._run_git("checkout", branch_name)
             else:
                 # Create new branch from main
-                self._log(f"Creating new branch {branch_name} from {self.main_branch}")
+                self._log(f"Creating new branch {branch_name} from {self.main_branch}", "🌿")
 
                 # Ensure we're on main before creating branch
                 if current != self.main_branch:
@@ -265,7 +270,7 @@ class GitManager:
         if status.is_clean:
             return False
 
-        self._log("Staging all changes")
+        self._log("Staging all changes", "📥")
         self._run_git("add", "-A")
         return True
 
@@ -281,10 +286,10 @@ class GitManager:
         # Check if there's anything to commit
         result = self._run_git("diff", "--cached", "--quiet", check=False)
         if result.returncode == 0:
-            self._log("Nothing to commit")
+            self._log("Nothing to commit", "ℹ️")
             return None
 
-        self._log(f"Committing: {message}")
+        self._log(f"Committing: {message}", "💾")
         self._run_git("commit", "-m", message)
 
         # Get the commit hash
@@ -302,7 +307,7 @@ class GitManager:
             Commit hash if changes were committed, None otherwise
         """
         if not self.stage_all_changes():
-            self._log("No changes to commit for story completion")
+            self._log("No changes to commit for story completion", "ℹ️")
             return None
 
         message = f"feat({story_id}): {story_title}"
@@ -327,7 +332,7 @@ class GitManager:
             raise BranchError("Not on a story branch, cannot merge to main")
 
         story_branch = status.current_branch
-        self._log(f"Merging {story_branch} to {self.main_branch}")
+        self._log(f"Merging {story_branch} to {self.main_branch}", "🔀")
 
         try:
             # Switch to main
@@ -337,7 +342,7 @@ class GitManager:
             self._run_git("merge", story_branch, "--no-ff", "-m", f"Merge branch '{story_branch}'")
 
             if delete_branch:
-                self._log(f"Deleting branch {story_branch}")
+                self._log(f"Deleting branch {story_branch}", "🗑️")
                 self._run_git("branch", "-d", story_branch)
 
             return True
@@ -366,7 +371,7 @@ class GitManager:
         else:
             raise BranchError("Not on a story branch and no story_id provided")
 
-        self._log(f"Hard resetting branch {branch_name}")
+        self._log(f"Hard resetting branch {branch_name}", "⚠️")
 
         # Discard all local changes
         self._run_git("reset", "--hard", "HEAD")
@@ -389,18 +394,18 @@ class GitManager:
             branch_to_delete = status.current_branch
 
         # Discard any uncommitted changes
-        self._log("Discarding uncommitted changes")
+        self._log("Discarding uncommitted changes", "⚠️")
         self._run_git("reset", "--hard", "HEAD", check=False)
         self._run_git("clean", "-fd", check=False)
 
         # Switch to main
         if status.current_branch != self.main_branch:
-            self._log(f"Switching to {self.main_branch}")
+            self._log(f"Switching to {self.main_branch}", "🔀")
             self._run_git("checkout", self.main_branch)
 
         # Delete the story branch if it exists
         if branch_to_delete and self.branch_exists(branch_to_delete):
-            self._log(f"Deleting branch {branch_to_delete}")
+            self._log(f"Deleting branch {branch_to_delete}", "🗑️")
             self._run_git("branch", "-D", branch_to_delete)
 
     def get_uncommitted_changes_summary(self) -> str:

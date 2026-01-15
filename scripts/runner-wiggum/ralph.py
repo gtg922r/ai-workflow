@@ -39,12 +39,19 @@ from core.worklog import WorkLogEntry
 
 
 # =============================================================================
-# Console Mode (no TUI) - Simple logging runner
+# Console Mode (no TUI) - Enhanced console runner with premium CLI feel
 # =============================================================================
 
 
 class ConsoleRunner:
-    """Simple console-based runner that logs directly to stdout."""
+    """Enhanced console-based runner with polished UI output.
+
+    Features:
+    - Timestamped log entries [HH:MM:SS]
+    - Unicode symbols for state changes and results
+    - Box-drawing characters for visual grouping
+    - Improved layout for summaries and error messages
+    """
 
     def __init__(self, project_path: Path, config: RunnerConfig, verbose: bool = False):
         self.project_path = project_path
@@ -52,146 +59,123 @@ class ConsoleRunner:
         self.controller = RunnerController(project_path)
         self.verbose = verbose
 
-    def _on_state_change(self, state: RunnerState) -> None:
-        from rich.console import Console
+        # Initialize the enhanced console UI
+        from core.console import create_console_ui
+        self.ui = create_console_ui(show_timestamps=True, box_width=80)
 
-        console = Console()
-        style = {
-            RunnerState.IDLE: "dim",
-            RunnerState.RUNNING: "green",
-            RunnerState.PAUSED: "yellow",
-            RunnerState.COMPLETED: "blue",
-            RunnerState.ERROR: "red",
-        }.get(state, "white")
-        console.print(f"[{style}]State: {state.value}[/]")
+    def _on_state_change(self, state: RunnerState) -> None:
+        """Handle state change with styled output."""
+        self.ui.state_change("State", state.value)
 
     def _on_git_dirty(self, status: str) -> bool:
         """Handle dirty working directory - prompt user.
-        
+
         Returns True to disable git and continue, False to abort.
         """
-        from rich.console import Console
         from rich.prompt import Confirm
 
-        console = Console()
-        console.print()
-        console.print("[yellow]Warning: Working directory has uncommitted changes:[/]")
-        console.print(f"[dim]{status}[/]")
-        console.print()
-        console.print("[dim]Git management requires a clean working directory to create branches and commits.[/]")
-        console.print("[dim]You can either abort and commit/stash your changes, or disable git for this run.[/]")
-        console.print()
-
+        self.ui.dirty_warning(status)
         return Confirm.ask("Disable git management and continue?", default=False)
 
     def _on_git_reset_prompt(self, message: str) -> bool:
         """Handle failure reset prompt."""
-        from rich.console import Console
         from rich.prompt import Confirm
 
-        console = Console()
-        console.print()
-        console.print(f"[yellow]{message}[/]")
-        console.print()
-
+        self.ui.reset_prompt(message)
         return Confirm.ask("Reset branch and discard changes?", default=False)
 
     def _on_iteration_start(self, iteration: int, story: Story | None) -> None:
-        from rich.console import Console
-        from rich.panel import Panel
-
-        console = Console()
-        story_info = f" - {story.title}" if story else ""
-        console.print()
-        console.print(Panel(f"Iteration {iteration}{story_info}", style="cyan"))
+        """Handle iteration start with visual header."""
+        story_title = story.title if story else None
+        self.ui.iteration_header(iteration, story_title)
 
     def _on_iteration_end(self, iteration: int, result: AgentResult) -> None:
-        from rich.console import Console
+        """Handle iteration end with structured summary."""
+        from core.console import Symbol
 
-        console = Console()
+        # Show success/failure status
         if result.success:
-            console.print("[green]✓ Completed[/]")
+            self.ui.success("Completed")
         else:
-            console.print(f"[red]✗ Failure: {result.error or 'unknown error'}[/]")
+            self.ui.error(f"Failure: {result.error or 'unknown error'}")
 
-        if result.tokens_used:
-            console.print(f"[dim]Tokens: {result.tokens_used:,}[/]")
-        if result.cost:
-            console.print(f"[dim]Cost: ${result.cost:.4f}[/]")
-
-        # Show full output if there's any
+        # Show output in a visual box (if there's substantial output)
         if result.output and result.output.strip():
-            console.print("[dim]--- Output ---[/]")
-            # Limit output to avoid flooding
             lines = result.output.strip().split("\n")
+            self.ui.agent_output_start()
+
             if len(lines) > 50:
+                # Show first 25 lines
                 for line in lines[:25]:
-                    console.print(f"[dim]{line}[/]")
-                console.print(f"[dim]... ({len(lines) - 50} lines omitted) ...[/]")
+                    self.ui.agent_output_line(line)
+                # Truncation notice
+                self.ui.agent_output_truncated(50, len(lines))
+                # Show last 25 lines
                 for line in lines[-25:]:
-                    console.print(f"[dim]{line}[/]")
+                    self.ui.agent_output_line(line)
             else:
                 for line in lines:
-                    console.print(f"[dim]{line}[/]")
-            console.print("[dim]--- End Output ---[/]")
-        
-        # Show summary
-        console.print(f"Summary: {result.summary}")
+                    self.ui.agent_output_line(line)
+
+            self.ui.agent_output_end()
+
+        # Show iteration summary
+        self.ui.iteration_summary(
+            success=result.success,
+            tokens=result.tokens_used,
+            cost=result.cost,
+            summary=result.summary,
+        )
 
     def _on_output(self, text: str) -> None:
-        from rich.console import Console
-
-        console = Console()
-        console.print(text)
+        """Handle general output messages."""
+        # Check if it's a git message (prefixed with [git])
+        if text.startswith("[git]"):
+            # Git messages already have symbols, just format nicely
+            git_msg = text[5:].strip()
+            self.ui.log(git_msg, style="magenta", timestamp=True)
+        else:
+            self.ui.info(text)
 
     def _on_worklog_entry(self, story_id: str, entry: WorkLogEntry) -> None:
-        """Handle worklog entry updates - display in console."""
-        from rich.console import Console
-
-        console = Console()
-        # Format and display the worklog entry
-        console.print(f"[dim]{entry.format_line()}[/]")
+        """Handle worklog entry updates - display with formatting."""
+        self.ui.worklog_entry(entry.format_line())
 
     async def run(self) -> None:
-        """Run in console mode."""
-        from rich.console import Console
-
-        console = Console()
-
-        console.print()
-        console.print("[bold]Ralph Wiggum - Console Mode[/]")
-        console.print(f"  Agent: [cyan]{self.config.agent_type.value}[/]")
-        console.print(f"  Iterations: [cyan]{self.config.max_iterations}[/]")
-        console.print(f"  Project: [cyan]{self.project_path}[/]")
-        console.print(f"  Git: [cyan]{'enabled' if self.config.git_enabled else 'disabled'}[/]")
-        if self.config.git_enabled:
-            console.print(f"  Main branch: [cyan]{self.config.main_branch}[/]")
-        console.print(f"  Review: [cyan]{'enabled' if self.config.review_enabled else 'disabled'}[/]")
-        
-        # Check agent availability
-        from agents.registry import create_agent
+        """Run in console mode with enhanced UI."""
         from agents.base import AgentConfig
-        
+        from agents.registry import create_agent
+
+        # Check agent availability first
         agent_config = AgentConfig(
             working_dir=self.project_path,
             timeout_seconds=self.config.timeout_seconds,
         )
         agent = create_agent(self.config.agent_type, agent_config)
-        
+
         if not agent.is_available():
-            console.print(f"  [red]ERROR: {self.config.agent_type.value} agent is not available![/]")
+            self.ui.error(f"{self.config.agent_type.value} agent is not available!")
             if self.config.agent_type == AgentType.CURSOR:
-                console.print("  [yellow]Install Cursor CLI with: curl https://cursor.com/install -fsS | bash[/]")
+                self.ui.warning("Install Cursor CLI with: curl https://cursor.com/install -fsS | bash")
             return
-        
+
         version = agent.get_version()
-        if version:
-            console.print(f"  Version: [cyan]{version}[/]")
-        
+
+        # Display banner with configuration
+        self.ui.banner(
+            title="Ralph Wiggum",
+            subtitle="Autonomous Agent Runner - Console Mode",
+            agent=self.config.agent_type.value,
+            iterations=self.config.max_iterations,
+            project=str(self.project_path),
+            git_enabled=self.config.git_enabled,
+            main_branch=self.config.main_branch,
+            review_enabled=self.config.review_enabled,
+            version=version,
+        )
+
         if self.verbose:
-            console.print(f"  [dim]Verbose mode enabled[/]")
-        
-        console.print()
+            self.ui.info("Verbose mode enabled")
 
         # Set up callbacks
         self.controller.set_callbacks(
@@ -208,28 +192,37 @@ class ConsoleRunner:
 
         self.controller.configure(self.config)
 
-        # Run
+        # Run with graceful interrupt handling
+        start_time = None
         try:
+            from datetime import datetime
+            start_time = datetime.now()
             await self.controller.run()
         except KeyboardInterrupt:
-            console.print("\n[yellow]Interrupted by user[/]")
+            self.ui.blank_line()
+            self.ui.warning("Interrupted by user")
             self.controller.stop()
         except Exception as e:
-            console.print(f"\n[red]Error: {e}[/]")
+            self.ui.blank_line()
+            self.ui.error(f"Error: {e}")
             raise
 
-        console.print()
-        console.print("[bold]Run complete[/]")
+        # Calculate duration
+        duration_seconds = None
+        if start_time:
+            from datetime import datetime
+            duration_seconds = (datetime.now() - start_time).total_seconds()
 
+        # Display final summary
         if self.controller.runner:
             stats = self.controller.runner.stats
-            console.print(f"  Iterations: {stats.iterations_completed}")
-            console.print(f"  Tokens: {stats.total_tokens:,}")
-            console.print(f"  Cost: ${stats.total_cost:.4f}")
-            if stats.errors:
-                console.print(f"  [red]Errors: {len(stats.errors)}[/]")
-                for err in stats.errors:
-                    console.print(f"    - {err}")
+            self.ui.final_summary(
+                iterations=stats.iterations_completed,
+                tokens=stats.total_tokens,
+                cost=stats.total_cost,
+                errors=stats.errors if stats.errors else None,
+                duration_seconds=duration_seconds,
+            )
 
 
 def run_console_mode(

@@ -32,3 +32,15 @@
 [2026-01-14 23:58:52] 📋 Decision: Implemented symlink as the recommended installation method with copy as fallback, allowing users to choose. Symlinks auto-update when the source repo is updated, which is ideal for development workflows.
 
 [2026-01-14 23:58:52] 📋 Decision: Commands are Gemini-specific per the existing repository structure, while skills are cross-agent (Gemini, Claude, Codex) following the provider conventions documented in PROVIDERS.md.
+
+[2026-01-14 23:58:52] ✓ Story Completed [installer-npx]: Interactive NPX-based Installer
+📋 Decision: Used @inquirer/prompts (modern, minimal) instead of inquirer (legacy, larger) for the interactive CLI to keep dependencies lightweight and aligned with the "minimalist" requirement.
+📋 Decision: Implemented symlink as the recommended installation method with copy as fallback, allowing users to choose. Symlinks auto-update when the source repo is updated, which is ideal for development workflows.
+📋 Decision: Commands are Gemini-specific per the existing repository structure, while skills are cross-agent (Gemini, Claude, Codex) following the provider conventions documented in PROVIDERS.md.
+
+[2026-01-15 00:05:37] Run #2 [runner-ui-polish]: ✓ Completed (403.2s)
+   Summary: <promise>COMPLETE</promise>
+
+[2026-01-15 00:05:37] 📋 Decision: Created a dedicated console.py module rather than inline styling to provide clean separation of concerns and enable reuse of UI components across the runner codebase.
+
+[2026-01-15 00:05:37] 📋 Decision: Used Rich library for terminal output compatibility - it handles ANSI escape codes and unicode rendering across different terminal emulators automatically.
