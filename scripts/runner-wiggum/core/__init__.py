@@ -1,5 +1,13 @@
 """Core runner components for Ralph Wiggum agent loops."""
 
+from .console import (
+    BoxChars,
+    ConsoleConfig,
+    ConsoleTheme,
+    ConsoleUI,
+    Symbol,
+    create_console_ui,
+)
 from .controller import RunnerCallbacks, RunnerController
 from .git import (
     BranchError,
@@ -16,7 +24,11 @@ from .runner import Runner, RunnerConfig, RunnerState, RunnerStats
 from .worklog import EntryType, WorkLog, WorkLogEntry, WorkLogManager
 
 __all__ = [
+    "BoxChars",
     "BranchError",
+    "ConsoleConfig",
+    "ConsoleTheme",
+    "ConsoleUI",
     "DirtyWorkingDirectoryError",
     "EntryType",
     "GitError",
@@ -35,7 +47,9 @@ __all__ = [
     "RunnerStats",
     "Story",
     "StoryType",
+    "Symbol",
     "WorkLog",
     "WorkLogEntry",
     "WorkLogManager",
+    "create_console_ui",
 ]
