@@ -36,15 +36,15 @@
         "Automatically copies or symlinks files to agent-specific directories (e.g., ~/.gemini/commands).",
         "Verifies installation success and provides a summary of actions."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "runner-ui-polish",
       "title": "Polished Console UI for Runner Ralph",
       "description": "Enhance the non-TUI terminal output (Console mode) of Runner Ralph to be more visually informative and easier to scan. This includes using symbols, grouping messages, and adding timestamps.",
       "acceptanceCriteria": [
-        "Use expressive Unicode symbols/emojis for state changes and results (e.g., ✅, ❌, ⏳, 📦, 🚀).",
-        "Implement box-drawing characters (┌, ─, ┐, etc.) to visually group related log messages, such as specific Git operations or agent iterations.",
+        "Use expressive Unicode symbols/emojis for state changes and results (e.g., \u2705, \u274c, \u23f3, \ud83d\udce6, \ud83d\ude80).",
+        "Implement box-drawing characters (\u250c, \u2500, \u2510, etc.) to visually group related log messages, such as specific Git operations or agent iterations.",
         "Add precise, readable timestamps (e.g., [HH:mm:ss]) to every log entry.",
         "Improve the layout of iteration summaries, cost reports, and error messages for better scannability.",
         "Maintain compatibility with standard terminal themes while providing a 'premium' CLI feel."

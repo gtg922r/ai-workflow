@@ -59,3 +59,6 @@ Started: 2026-01-14 23:58:53
 - ✅ Precise timestamps [HH:MM:SS] on every log entry
 - ✅ Improved layout for iteration summaries, cost reports, error messages
 - ✅ Terminal compatibility via Rich library (standard ANSI colors)
+- **Decision** [00:05:37]: Created a dedicated console.py module rather than inline styling to provide clean separation of concerns and enable reuse of UI components across the runner codebase.
+- **Decision** [00:05:37]: Used Rich library for terminal output compatibility - it handles ANSI escape codes and unicode rendering across different terminal emulators automatically.
+[00:05:37] Iteration 2 completed: <promise>COMPLETE</promise>
