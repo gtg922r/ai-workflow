@@ -1,0 +1,39 @@
+{
+  "name": "@ryancash/ai-workflow",
+  "version": "1.0.0",
+  "description": "Interactive installer for AI workflow tools, skills, and commands",
+  "type": "module",
+  "bin": {
+    "ai-workflow": "./bin/install.js"
+  },
+  "files": [
+    "bin/",
+    "commands/",
+    "skills/",
+    "scripts/"
+  ],
+  "scripts": {
+    "start": "node bin/install.js",
+    "test": "node bin/test-installer.js && node bin/test-e2e.js"
+  },
+  "keywords": [
+    "ai",
+    "workflow",
+    "gemini",
+    "claude",
+    "codex",
+    "installer"
+  ],
+  "author": "Ryan Cash",
+  "license": "MIT",
+  "dependencies": {
+    "@inquirer/prompts": "^7.2.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ryancash/ai-workflow.git"
+  }
+}

@@ -1,14 +1,8 @@
-Session: ralph-20260114-231741-48bbce
-Started: 2026-01-14T23:17:41.039433
-Last Update: 2026-01-14T23:33:14.165954
-Total Runs: 3
+Session: ralph-20260114-235413-c6a510
+Started: 2026-01-14T23:54:13.116211
+Last Update: 2026-01-14T23:58:52.616137
+Total Runs: 1
 
 --- Run History ---
-✓ Run #1 [runner-git] (369.7s)
-  <promise>COMPLETE</promise>
-
-✓ Run #2 [runner-review] (305.5s)
-  <promise>COMPLETE</promise>
-
-✓ Run #3 [runner-prompts] (255.9s)
+✓ Run #1 [installer-npx] (279.4s)
   <promise>COMPLETE</promise>

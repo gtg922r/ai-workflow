@@ -23,3 +23,12 @@
 [2026-01-14 23:33:14] 📋 Decision: Used `story_type` as the Python field name (rather than `type`) to avoid shadowing the built-in `type()` function, while keeping `type` as the JSON key for cleaner PRD files.
 
 [2026-01-14 23:33:14] 📋 Decision: Template resolution checks project root first (for both type-specific and generic) before bundled templates, allowing users to customize any template by placing it in their project root.
+
+[2026-01-14 23:58:52] Run #1 [installer-npx]: ✓ Completed (279.4s)
+   Summary: <promise>COMPLETE</promise>
+
+[2026-01-14 23:58:52] 📋 Decision: Used @inquirer/prompts (modern, minimal) instead of inquirer (legacy, larger) for the interactive CLI to keep dependencies lightweight and aligned with the "minimalist" requirement.
+
+[2026-01-14 23:58:52] 📋 Decision: Implemented symlink as the recommended installation method with copy as fallback, allowing users to choose. Symlinks auto-update when the source repo is updated, which is ideal for development workflows.
+
+[2026-01-14 23:58:52] 📋 Decision: Commands are Gemini-specific per the existing repository structure, while skills are cross-agent (Gemini, Claude, Codex) following the provider conventions documented in PROVIDERS.md.
