@@ -1,0 +1,94 @@
+{
+  "projectName": "ai-workflow",
+  "branchName": "main",
+  "userStories": [
+    {
+      "id": "story-1",
+      "title": "Create a gemini command for pull a PR for local changes",
+      "description": "The command should be able to pull a github PR for changes from the main branch to the current branch. If in a branch already, PR should include local changes on top of the branch. If not on a branch, then PR should be any local changes. If there have been commits to main that have not been pusehd to origin, then ask the user if those should be part of the PR first, or if they should just be pushed straight to origin",
+      "acceptanceCriteria": [
+        "The command should be able to pull a github PR for changes from the main branch to the current branch. If in a branch already, PR should include local changes on top of the branch. If not on a branch, then PR should be any local changes. If there have been commits to main that have not been pusehd to origin, then ask the user if those should be part of the PR first, or if they should just be pushed straight to origin",
+        "The command should use any passed args to add clarity as to the scope of the PR"
+      ],
+      "passes": true
+    },
+    {
+      "id": "runner-git",
+      "title": "Robust Git State Management",
+      "description": "Automate git branching and committing to ensure every story is an atomic, safe unit of work. This enables 'high velocity' by keeping the main branch clean.",
+      "acceptanceCriteria": [
+        "Runner checks for clean git working directory before starting.",
+        "Runner automatically creates/switches to branch `ralph/{story_id}` at start of story.",
+        "Upon successful completion (verification + review), Runner stages all changes and commits with Story title. Merge back to local main.",
+        "On failure/reset, offer to hard reset the temporary branch."
+      ],
+      "passes": true
+    },
+    {
+      "id": "installer-npx",
+      "title": "Interactive NPX-based Installer",
+      "description": "Develop a CLI-based installation script that can be run via `npx` to fetch and configure components from this repository. The installer should provide a minimalist, user-friendly CLI interface for selecting which scripts, commands, skills, and extensions to install, which agent to target (Gemini, OpenAI, or Claude), and the installation scope (user profile vs. project local).",
+      "acceptanceCriteria": [
+        "Supports `npx [user/repo]` format for remote execution.",
+        "Minimalist interactive selection for components (commands, skills, extensions, scripts).",
+        "Target agent selection (gemini-cli, openai-codex, claude-code-cli).",
+        "Installation scope selection (global user profile vs. local project).",
+        "Automatically copies or symlinks files to agent-specific directories (e.g., ~/.gemini/commands).",
+        "Verifies installation success and provides a summary of actions."
+      ],
+      "passes": true
+    },
+    {
+      "id": "runner-ui-polish",
+      "title": "Polished Console UI for Runner Ralph",
+      "description": "Enhance the non-TUI terminal output (Console mode) of Runner Ralph to be more visually informative and easier to scan. This includes using symbols, grouping messages, and adding timestamps.",
+      "acceptanceCriteria": [
+        "Use expressive Unicode symbols/emojis for state changes and results (e.g., \u2705, \u274c, \u23f3, \ud83d\udce6, \ud83d\ude80).",
+        "Implement box-drawing characters (\u250c, \u2500, \u2510, etc.) to visually group related log messages, such as specific Git operations or agent iterations.",
+        "Add precise, readable timestamps (e.g., [HH:mm:ss]) to every log entry.",
+        "Improve the layout of iteration summaries, cost reports, and error messages for better scannability.",
+        "Maintain compatibility with standard terminal themes while providing a 'premium' CLI feel."
+      ],
+      "passes": true
+    },
+    {
+      "id": "runner-rename-ralph",
+      "title": "Unified Renaming to Runner Ralph",
+      "description": "Perform a comprehensive, repository-wide rename of all 'runner-wiggum' occurrences to 'runner-ralph'. This ensures consistency between the directory structure, the existing 'ralph.py' script, and internal identifiers, leveraging better alliteration.",
+      "acceptanceCriteria": [
+        "Rename the directory `scripts/runner-wiggum/` to `scripts/runner-ralph/`.",
+        "Update all internal code references, imports, and string literals (e.g., 'Ralph Wiggum' to 'Runner Ralph').",
+        "Update all external documentation (README.md, AGENTS.md, etc.) and git branch prefixes (from `wiggum/` to `ralph/`).",
+        "Ensure the system remains fully functional and passes all tests after the rename.",
+        "Verify that `.gitignore` and other configuration files are updated to reflect the new directory name."
+      ],
+      "passes": true
+    },
+    {
+      "id": "command-workflow-doctor",
+      "title": "New Custom Command: Workflow Doctor",
+      "description": "Implement a new custom Gemini command to diagnose and validate the AI workflow environment, ensuring all tools are correctly configured and dependencies are met.",
+      "acceptanceCriteria": [
+        "Add `workflow-doctor` command to `commands/gemini/workflow/`.",
+        "Command checks for presence and versions of supported agent CLIs (gemini, claude, etc.).",
+        "Validates configuration files and critical environment variables (e.g., API keys, project paths).",
+        "Verifies that installed skills and extensions are correctly symlinked or copied to their respective target directories.",
+        "Provides a clear report with actionable feedback for any missing or misconfigured components."
+      ],
+      "passes": true
+    },
+    {
+      "id": "runner-review",
+      "title": "Add Post-Implementation Review Phase",
+      "description": "Implement a 'Reviewer' step in the loop. After the implementing agent finishes (and verification passes), a second pass (or distinct agent role) critiques the code against `AGENTS.md` and best practices.",
+      "acceptanceCriteria": [
+        "Add configuration to enable/disable review phase. By default, review is disabled.",
+        "If enabled, trigger a 'Review' prompt after implementation success.",
+        "Review prompt should see `git diff` and `AGENTS.md`.",
+        "Output of review should be included in progress.txt",
+        "If Reviewer output contains 'REJECT', reopen the story with feedback. If 'APPROVE', complete it."
+      ],
+      "passes": true
+    }
+  ]
+}
