@@ -383,12 +383,19 @@ class Runner:
 
         story_context = ""
         if story:
+            feature_spec = ""
+            if story.feature_spec:
+                feature_spec = f"""
+### Feature Spec
+{chr(10).join(f'- {s}' for s in story.feature_spec)}
+"""
             story_context = f"""
 ## Current Story
 
 **ID**: {story.id}
 **Title**: {story.title}
 **Description**: {story.description}
+{feature_spec}
 
 ### Acceptance Criteria
 {chr(10).join(f'- {c}' for c in story.acceptance_criteria)}

@@ -6,6 +6,10 @@
       "id": "story-1",
       "title": "Example Story 1",
       "description": "Implement the first feature of the project. This story should be specific enough to complete in a single context window.",
+      "spec": [
+        "Clarify key behaviors or constraints for this story",
+        "Add implementation notes the agent should follow"
+      ],
       "acceptanceCriteria": [
         "Feature is implemented according to specification",
         "Unit tests are written and passing",
@@ -17,6 +21,7 @@
       "id": "story-2",
       "title": "Example Story 2",
       "description": "Implement the second feature. Each story should be atomic and independently verifiable.",
+      "spec": "Single spec line is also supported as a string",
       "acceptanceCriteria": [
         "Feature is implemented according to specification",
         "Integration with Story 1 works correctly",

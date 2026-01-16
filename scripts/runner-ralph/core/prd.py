@@ -35,10 +35,22 @@ class Story:
     id: str
     title: str
     description: str
+    feature_spec: list[str] = field(default_factory=list)
     acceptance_criteria: list[str] = field(default_factory=list)
     passes: bool = False
     story_type: StoryType | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
+
+    @staticmethod
+    def _normalize_feature_spec(value: Any) -> list[str]:
+        """Normalize spec input into a list of strings."""
+        if value is None:
+            return []
+        if isinstance(value, str):
+            return [value] if value.strip() else []
+        if isinstance(value, list):
+            return [str(item).strip() for item in value if str(item).strip()]
+        return []
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Story:
@@ -47,6 +59,7 @@ class Story:
             id=data["id"],
             title=data["title"],
             description=data.get("description", ""),
+            feature_spec=cls._normalize_feature_spec(data.get("spec")),
             acceptance_criteria=data.get("acceptanceCriteria", []),
             passes=data.get("passes", False),
             story_type=StoryType.from_string(data.get("type")),
@@ -62,6 +75,8 @@ class Story:
             "acceptanceCriteria": self.acceptance_criteria,
             "passes": self.passes,
         }
+        if self.feature_spec:
+            result["spec"] = self.feature_spec
         if self.story_type:
             result["type"] = self.story_type.value
         if self.metadata:

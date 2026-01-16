@@ -61,6 +61,10 @@ Create your PRD file (`prd.json`):
       "id": "story-1",
       "title": "Implement user authentication",
       "description": "Add login and registration functionality",
+      "spec": [
+        "Support password reset via email",
+        "Use existing user table; do not introduce new auth schema"
+      ],
       "acceptanceCriteria": [
         "Users can register with email and password",
         "Users can log in with valid credentials",
@@ -340,6 +344,10 @@ Review adds overhead (an extra agent call per completion), so consider disabling
       "title": "Short title",
       "description": "Detailed description of the story",
       "type": "feature",
+      "spec": [
+        "Key behaviors or requirements that expand on the story",
+        "Additional implementation notes or constraints"
+      ],
       "acceptanceCriteria": [
         "Criterion 1",
         "Criterion 2"
@@ -362,6 +370,15 @@ The optional `type` field enables task-type specific prompts:
 | `test` | Test coverage | Uses default prompt |
 
 When a story has a `type` field, the runner looks for `prompt_{type}.md` (e.g., `prompt_feature.md`) before falling back to the generic `prompt.md`.
+
+### Feature Spec
+
+The optional `spec` field provides additional requirements or constraints for a story. It can be:
+
+- A single string (one spec item)
+- An array of strings (multiple spec items)
+
+When present, specs are rendered in the prompt under a "Feature Spec" heading, similar to acceptance criteria.
 
 ### Story Best Practices
 
