@@ -51,13 +51,19 @@ class ConsoleRunner:
     """Enhanced console-based runner with polished UI output.
 
     Features:
-    - Timestamped log entries [HH:MM:SS]
+    - Timestamped log entries [HH:MM:SS] (optional)
     - Unicode symbols for state changes and results
     - Box-drawing characters for visual grouping
     - Improved layout for summaries and error messages
     """
 
-    def __init__(self, project_path: Path, config: RunnerConfig, verbose: bool = False):
+    def __init__(
+        self,
+        project_path: Path,
+        config: RunnerConfig,
+        verbose: bool = False,
+        show_timestamps: bool = False,
+    ):
         self.project_path = project_path
         self.config = config
         self.controller = RunnerController(project_path)
@@ -65,7 +71,10 @@ class ConsoleRunner:
 
         # Initialize the enhanced console UI
         from core.console import create_console_ui
-        self.ui = create_console_ui(show_timestamps=True, box_width=80)
+
+        # Enable timestamps if explicitly requested or in verbose mode
+        timestamps = show_timestamps or verbose
+        self.ui = create_console_ui(show_timestamps=timestamps, box_width=80)
 
     def _on_state_change(self, state: RunnerState) -> None:
         """Handle state change with styled output."""
@@ -236,6 +245,7 @@ def run_console_mode(
     max_iterations: int,
     timeout: int,
     verbose: bool = False,
+    show_timestamps: bool = False,
     git_enabled: bool = True,
     main_branch: str = "main",
     use_main_as_base: bool = False,
@@ -256,7 +266,9 @@ def run_console_mode(
         model=model,
     )
 
-    runner = ConsoleRunner(project_path, config, verbose=verbose)
+    runner = ConsoleRunner(
+        project_path, config, verbose=verbose, show_timestamps=show_timestamps
+    )
     asyncio.run(runner.run())
 
 
@@ -893,6 +905,11 @@ def main():
         help="Show verbose output including full agent responses",
     )
     parser.add_argument(
+        "--timestamps",
+        action="store_true",
+        help="Show timestamps in console output",
+    )
+    parser.add_argument(
         "--no-git",
         action="store_true",
         help="Disable git state management (branch creation, commits, etc.)",
@@ -937,6 +954,7 @@ def main():
             max_iterations=args.iterations,
             timeout=args.timeout,
             verbose=args.verbose,
+            show_timestamps=args.timestamps,
             git_enabled=not args.no_git,
             main_branch=args.main_branch,
             use_main_as_base=args.use_main,
