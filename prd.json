@@ -71,6 +71,51 @@
         "The overall doctor status remains 'healthy' if only API keys are missing."
       ],
       "passes": false
+    },
+    {
+      "id": "ralph-console-polish",
+      "title": "Refine Runner Ralph Console Output Formatting",
+      "description": "Improve the visual clarity of the console output by removing or relocating the per-line timestamps that currently break ASCII/Rich formatting structures like boxes.",
+      "acceptanceCriteria": [
+        "Per-line timestamps are removed from the default console output.",
+        "Visual structures (like boxes or dividers) render correctly without interruption.",
+        "Optional: Timestamps can be re-enabled via a --verbose or --timestamps flag if needed for debugging."
+      ],
+      "passes": false
+    },
+    {
+      "id": "ralph-prd-location-flag",
+      "title": "Add PRD Path Option to Runner Ralph",
+      "description": "Implement a CLI argument to allow users to specify a custom path for the PRD file, increasing tool flexibility.",
+      "acceptanceCriteria": [
+        "New `--prd` (or `-p`) flag added to the runner-ralph CLI.",
+        "The tool successfully loads and validates the PRD from the provided path.",
+        "Defaults to `prd.json` in the current working directory if the flag is omitted."
+      ],
+      "passes": false
+    },
+    {
+      "id": "installer-npm-warning-fix",
+      "title": "Fix NPM Ignored Files Warning in Installer",
+      "description": "Resolve the 'npm warn gitignore-fallback' warning during installation by explicitly configuring file exclusion for the package.",
+      "acceptanceCriteria": [
+        "Installation via the install script no longer produces the '.npmignore' warning.",
+        "Appropriate exclusion configuration (e.g., adding a .npmignore or using 'files' in package.json) is implemented.",
+        "The package still correctly includes all necessary installation artifacts."
+      ],
+      "passes": false
+    },
+    {
+      "id": "ralph-story-selection",
+      "title": "Interactive Story Selection for Runner Ralph",
+      "description": "Add an interactive selection screen to Runner Ralph, allowing users to choose specific stories from the PRD and define their execution order.",
+      "acceptanceCriteria": [
+        "Interactive story selection is triggered by a new `--select` flag.",
+        "The menu displays all available stories from the PRD, allowing multi-select.",
+        "The tool processes only the selected stories in the specified or defined order.",
+        "Default behavior (run all in order) is maintained when the `--select` flag is omitted."
+      ],
+      "passes": false
     }
   ]
 }
