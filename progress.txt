@@ -147,3 +147,14 @@
 [2026-01-16 15:54:41] 📋 Decision: Made console mode the default for Runner Ralph by switching the argparse logic from `--no-tui` (defaulting to TUI) to `--tui` (defaulting to console). This simplifies the common use case of running in headless/CLI mode.
 
 [2026-01-16 15:54:41] 💡 Learning: The existing ConsoleRunner implementation already provided the required Rich-based formatting, so only the entry point logic needed updating.
+
+[2026-01-16 15:54:42] ✓ Story Completed [ralph-cli-default]: Make Console CLI the Default for Runner Ralph
+📋 Decision: Made console mode the default for Runner Ralph by switching the argparse logic from `--no-tui` (defaulting to TUI) to `--tui` (defaulting to console). This simplifies the common use case of running in headless/CLI mode.
+💡 Learning: The existing ConsoleRunner implementation already provided the required Rich-based formatting, so only the entry point logic needed updating.
+
+[2026-01-16 15:55:34] Run #3 [workflow-doctor-api-keys]: ✓ Completed (51.4s)
+   Summary: <promise>COMPLETE</promise>
+
+[2026-01-16 15:55:34] 📋 Decision: Updated the prompt instructions in `workflow-doctor.toml` rather than modifying shell commands, as the tool's diagnostic intelligence relies on the LLM's interpretation of the gathered environment data.
+
+[2026-01-16 15:55:34] 💡 Learning: The Gemini CLI's TOML-based command structure is highly effective for implementing diagnostic tools where the reporting logic can be refined through prompt engineering without changing the underlying data collection scripts.

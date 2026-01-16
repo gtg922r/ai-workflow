@@ -70,7 +70,7 @@
         "The tool suggests using the agent's built-in auth flow (e.g., firebase login, claude auth) as the primary resolution.",
         "The overall doctor status remains 'healthy' if only API keys are missing."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "ralph-console-polish",
