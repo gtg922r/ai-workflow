@@ -39,30 +39,6 @@
       "passes": false
     },
     {
-      "id": "command-poem-5",
-      "title": "Gemini Command: 7-Line Poem Generator",
-      "description": "Create a Gemini command that generates a 7-line poem about a specified topic.",
-      "acceptanceCriteria": [
-        "Command named `poem` added to `commands/gemini/creative/`.",
-        "Generates exactly 7 lines of poetry.",
-        "Takes a topic as a required argument.",
-        "Output is formatted as a clear, readable poem."
-      ],
-      "passes": false
-    },
-    {
-      "id": "command-poem-3",
-      "title": "Gemini Command: 7-Line Poem Generator",
-      "description": "Create a Gemini command that generates a 7-line poem about a specified topic.",
-      "acceptanceCriteria": [
-        "Command named `poem` added to `commands/gemini/creative/`.",
-        "Generates exactly 7 lines of poetry.",
-        "Takes a topic as a required argument.",
-        "Output is formatted as a clear, readable poem."
-      ],
-      "passes": false
-    },
-    {
       "id": "installer-defaults-refine",
       "title": "Refine Installer Defaults & Script Selection",
       "description": "Streamline the installation process by changing the default selections. Commands, Skills, and Extensions should be selected by default to encourage a complete setup. Scripts, being more specialized tools, should require explicit user selection via a granular list.",
