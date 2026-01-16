@@ -104,7 +104,7 @@ class ConsoleTheme:
 class ConsoleConfig:
     """Configuration for console output."""
 
-    show_timestamps: bool = True
+    show_timestamps: bool = False
     timestamp_format: str = "%H:%M:%S"
     box_width: int = 80
 
@@ -132,16 +132,16 @@ class ConsoleUI:
         self._section_open = False
 
     def _timestamp(self) -> str:
-        """Get formatted timestamp string."""
+        """Get formatted timestamp string with trailing space."""
         if self.config.show_timestamps:
-            return f"[{datetime.now().strftime(self.config.timestamp_format)}]"
+            return f"[{datetime.now().strftime(self.config.timestamp_format)}] "
         return ""
 
     def _styled_timestamp(self) -> Text:
         """Get styled timestamp as Rich Text."""
         ts = self._timestamp()
         if ts:
-            return Text(f"{ts} ", style="dim")
+            return Text(ts, style="dim")
         return Text("")
 
     def log(
@@ -227,7 +227,7 @@ class ConsoleUI:
         width = self.config.box_width
         # Calculate available space for the border line after title
         ts = self._timestamp()
-        ts_width = len(ts) + 1 if ts else 0  # +1 for space after timestamp
+        ts_width = len(ts)
         content_width = width - ts_width
 
         # Top border with title embedded
@@ -238,7 +238,7 @@ class ConsoleUI:
             right_padding = 1
         right_border = BoxChars.H * right_padding + BoxChars.TR
 
-        header = f"{ts} [{style}]{left_border}{title_display}{right_border}[/]"
+        header = f"{ts}[{style}]{left_border}{title_display}{right_border}[/]"
         self.console.print(header)
         self._section_open = True
 
@@ -250,16 +250,16 @@ class ConsoleUI:
             indent: Indentation level
         """
         ts = self._timestamp()
-        prefix = f"{ts} {BoxChars.V}{' ' * indent}"
+        prefix = f"{ts}{BoxChars.V}{' ' * indent}"
         self.console.print(f"[dim]{prefix}[/]{content}")
 
     def section_end(self, style: str = "cyan") -> None:
         """Close a visual section."""
         ts = self._timestamp()
-        ts_width = len(ts) + 1 if ts else 0  # +1 for space after timestamp
+        ts_width = len(ts)
         content_width = self.config.box_width - ts_width
         border = BoxChars.BL + BoxChars.H * (content_width - 2) + BoxChars.BR
-        self.console.print(f"{ts} [{style}]{border}[/]")
+        self.console.print(f"{ts}[{style}]{border}[/]")
         self._section_open = False
 
     # === Iteration Display ===
@@ -282,12 +282,12 @@ class ConsoleUI:
 
         # Calculate content width accounting for timestamp
         ts = self._timestamp()
-        ts_width = len(ts) + 1 if ts else 0  # +1 for space after timestamp
+        ts_width = len(ts)
         content_width = self.config.box_width - ts_width
 
         # Top border (double line for emphasis)
         top = f"{BoxChars.DTL}{BoxChars.DH * (content_width - 2)}{BoxChars.DTR}"
-        self.console.print(f"{ts} [cyan bold]{top}[/]")
+        self.console.print(f"{ts}[cyan bold]{top}[/]")
 
         # Title line - account for emoji width (roughly)
         title_display = f"{Symbol.ITERATION} {title}"
@@ -297,11 +297,11 @@ class ConsoleUI:
         if padding < 0:
             padding = 1
         mid = f"{BoxChars.DV} {title_display}{' ' * padding}{BoxChars.DV}"
-        self.console.print(f"{ts} [cyan bold]{mid}[/]")
+        self.console.print(f"{ts}[cyan bold]{mid}[/]")
 
         # Bottom border
         bot = f"{BoxChars.DBL}{BoxChars.DH * (content_width - 2)}{BoxChars.DBR}"
-        self.console.print(f"{ts} [cyan bold]{bot}[/]")
+        self.console.print(f"{ts}[cyan bold]{bot}[/]")
 
     def iteration_summary(
         self,
@@ -322,9 +322,9 @@ class ConsoleUI:
 
         # Status line
         if success:
-            self.console.print(f"{ts} [green]{Symbol.SUCCESS} Completed[/]")
+            self.console.print(f"{ts}[green]{Symbol.SUCCESS} Completed[/]")
         else:
-            self.console.print(f"{ts} [red]{Symbol.FAILURE} Failed[/]")
+            self.console.print(f"{ts}[red]{Symbol.FAILURE} Failed[/]")
 
         # Stats (if available)
         if tokens is not None or cost is not None:
@@ -337,7 +337,7 @@ class ConsoleUI:
 
         # Summary
         if summary:
-            self.console.print(f"{ts} [dim]{Symbol.ARROW} {summary}[/]")
+            self.console.print(f"{ts}[dim]{Symbol.ARROW} {summary}[/]")
 
     # === Git Operations ===
 
@@ -521,17 +521,17 @@ class ConsoleUI:
         """Output a horizontal separator."""
         ts = self._timestamp()
         line = BoxChars.H * (self.config.box_width - len(ts) - 1)
-        self.console.print(f"{ts} [{style}]{line}[/]")
+        self.console.print(f"{ts}[{style}]{line}[/]")
 
     def worklog_entry(self, formatted_line: str) -> None:
         """Display a worklog entry."""
         ts = self._timestamp()
-        self.console.print(f"{ts} [dim]{formatted_line}[/]")
+        self.console.print(f"{ts}[dim]{formatted_line}[/]")
 
 
 # Factory function for easy creation
 def create_console_ui(
-    show_timestamps: bool = True,
+    show_timestamps: bool = False,
     box_width: int = 80,
 ) -> ConsoleUI:
     """Create a configured ConsoleUI instance.
