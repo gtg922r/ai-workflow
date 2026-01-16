@@ -49,6 +49,28 @@
         "The installation summary correctly reflects the specific scripts chosen."
       ],
       "passes": false
+    },
+    {
+      "id": "ralph-cli-default",
+      "title": "Make Console CLI the Default for Runner Ralph",
+      "description": "Replace the heavy-weight TUI with the standard console/CLI interface as the default mode of operation for Runner Ralph.",
+      "acceptanceCriteria": [
+        "Runner Ralph starts in console mode by default without the --no-tui flag.",
+        "The TUI mode is still accessible via a flag (e.g., --tui) if preserved, or removed if obsolete.",
+        "The console interface maintains its visual polish (Rich-based formatting)."
+      ],
+      "passes": false
+    },
+    {
+      "id": "workflow-doctor-api-keys",
+      "title": "Downgrade API Key Checks in Workflow Doctor",
+      "description": "Modify the workflow-doctor to treat missing API keys as informational rather than critical issues, acknowledging that agents provide their own auth flows.",
+      "acceptanceCriteria": [
+        "Missing API keys are reported as informational or warnings, not critical errors.",
+        "The tool suggests using the agent's built-in auth flow (e.g., firebase login, claude auth) as the primary resolution.",
+        "The overall doctor status remains 'healthy' if only API keys are missing."
+      ],
+      "passes": false
     }
   ]
 }
