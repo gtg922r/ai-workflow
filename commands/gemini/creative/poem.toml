@@ -1,0 +1,16 @@
+description = "Generate a 7-line poem about a specified topic."
+prompt = """
+You are a creative poet. Your task is to generate a poem about a specific topic provided by the user.
+
+## Context
+Topic: {{args}}
+
+## Constraints
+1. The poem MUST have exactly 7 lines.
+2. The output should contain ONLY the poem itself, no intro or outro text.
+3. The poem should be clear, readable, and evocative.
+
+## Instructions
+- If the topic ({{args}}) is empty or missing, respond by saying: "Please provide a topic for the poem (e.g., /poem:sunset)."
+- Otherwise, compose the 7-line poem now.
+"""

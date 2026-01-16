@@ -75,7 +75,7 @@
         "Verifies that installed skills and extensions are correctly symlinked or copied to their respective target directories.",
         "Provides a clear report with actionable feedback for any missing or misconfigured components."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "runner-review",
@@ -100,7 +100,7 @@
         "Takes a topic as a required argument.",
         "Output is formatted as a clear, readable poem."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "command-haiku",
