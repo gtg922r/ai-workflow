@@ -48,7 +48,7 @@
         "Scripts are NOT selected by default in this list; the user must choose which ones they want.",
         "The installation summary correctly reflects the specific scripts chosen."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "ralph-cli-default",
@@ -59,7 +59,7 @@
         "The TUI mode is still accessible via a flag (e.g., --tui) if preserved, or removed if obsolete.",
         "The console interface maintains its visual polish (Rich-based formatting)."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "workflow-doctor-api-keys",
