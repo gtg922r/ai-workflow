@@ -37,6 +37,7 @@ The interactive installer will guide you through:
 - **`skills/`**: Specialized skill definitions for agents.
   - **`skills/command-creator/`**: Creates and manages custom commands (`.toml`) for the Gemini CLI, supporting reusable prompts, context-aware arguments, and dynamic shell execution.
   - **`skills/skill-creator/`**: A meta-skill that helps an agent author new, spec-compliant Agent Skills (with progressive disclosure) and provides Gemini/Claude/Codex installation guidance.
+  - **`skills/runner-ralph/`**: Instructions for configuring and running the Runner Ralph autonomous development loop. Use when the user wants to start an automated coding session, configure a PRD, or understand how to use the runner script.
 - **`prompts/`**: A collection of reusable system and task-specific prompts.
 
 ## Manual Usage
