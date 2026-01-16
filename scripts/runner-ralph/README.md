@@ -153,16 +153,17 @@ your-project/
 
 1. **Load PRD** - Read user stories from `prd.json`
 2. **Check git state** - Ensure working directory is clean
-3. **Create branch** - Switch to `ralph/{story-id}` branch
-4. **Initialize worklog** - Create per-story work log file
-5. **Build prompt** - Combine template with story context and progress history
-6. **Run agent** - Execute the AI agent in headless mode
-7. **Log progress** - Record decisions and learnings to worklog in real-time
-8. **Parse output** - Look for completion signal (`<promise>COMPLETE</promise>`)
-9. **Review phase** (optional) - Run a reviewer pass to critique the implementation
-10. **Commit & merge** - Stage all changes, commit with story title, merge to main
-11. **Update state** - Mark story complete, save progress with worklog summary
-12. **Repeat** - Continue until all stories pass or max iterations reached
+3. **Capture base branch** - Remember current branch (or use main with `--use-main`)
+4. **Create story branch** - Switch to `ralph/{story-id}` branch from base
+5. **Initialize worklog** - Create per-story work log file
+6. **Build prompt** - Combine template with story context and progress history
+7. **Run agent** - Execute the AI agent in headless mode
+8. **Log progress** - Record decisions and learnings to worklog in real-time
+9. **Parse output** - Look for completion signal (`<promise>COMPLETE</promise>`)
+10. **Review phase** (optional) - Run a reviewer pass to critique the implementation
+11. **Commit & merge** - Stage all changes, commit with story title, merge to base branch
+12. **Update state** - Mark story complete, save progress with worklog summary
+13. **Repeat** - Continue until all stories pass or max iterations reached
 
 ## Work Logs
 
@@ -220,10 +221,39 @@ The runner automatically manages git branches to keep each story as an atomic, s
 ### Branch Workflow
 
 1. **Pre-flight check** - Verifies working directory is clean before starting
-2. **Story branches** - Creates `ralph/{story-id}` branch for each story
-3. **Automatic commits** - On story completion, stages all changes and commits with title
-4. **Merge to main** - Merges completed story branch back to main, deletes branch
-5. **Failure recovery** - Offers to hard reset branch on failure/abort
+2. **Capture base branch** - Uses your current branch as the base for story branches
+3. **Story branches** - Creates `ralph/{story-id}` branch for each story from the base
+4. **Automatic commits** - On story completion, stages all changes and commits with title
+5. **Merge to base** - Merges completed story branch back to the base branch, deletes branch
+6. **Failure recovery** - Offers to hard reset branch on failure/abort
+
+### Starting from a Feature Branch
+
+By default, the runner uses your **current branch** as the base:
+
+```bash
+# Example: working on a feature branch
+git checkout feature/my-work
+uv run ralph.py --no-tui
+
+# Story branches will be: ralph/story-1, ralph/story-2, etc.
+# All merges go back to feature/my-work
+# You end up on feature/my-work with all stories merged in
+```
+
+This is useful when you want to use Runner Ralph to build features within an existing branch workflow.
+
+### Using Main as Base
+
+If you prefer to always branch from and merge to `main` (or another named branch), use `--use-main`:
+
+```bash
+# Force branching from main, regardless of current branch
+uv run ralph.py --no-tui --use-main
+
+# Combined with --main-branch for non-standard names
+uv run ralph.py --no-tui --use-main --main-branch develop
+```
 
 ### CLI Options
 
@@ -231,7 +261,10 @@ The runner automatically manages git branches to keep each story as an atomic, s
 # Disable git management entirely
 uv run ralph.py --no-git
 
-# Use a different main branch name
+# Always branch from main instead of current branch
+uv run ralph.py --use-main
+
+# Use a different "main" branch name (used with --use-main)
 uv run ralph.py --main-branch develop
 
 # Specify a model to use (passed to agent CLI --model flag)

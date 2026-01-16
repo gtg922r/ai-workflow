@@ -237,6 +237,7 @@ def run_console_mode(
     verbose: bool = False,
     git_enabled: bool = True,
     main_branch: str = "main",
+    use_main_as_base: bool = False,
     review_enabled: bool = False,
     model: str | None = None,
 ) -> None:
@@ -249,6 +250,7 @@ def run_console_mode(
         allow_network=True,
         git_enabled=git_enabled,
         main_branch=main_branch,
+        use_main_as_base=use_main_as_base,
         review_enabled=review_enabled,
         model=model,
     )
@@ -898,12 +900,17 @@ def main():
         "--main-branch",
         type=str,
         default="main",
-        help="Name of the main branch (default: main)",
+        help="Name of the main branch, used with --use-main (default: main)",
     )
     parser.add_argument(
         "--review",
         action="store_true",
         help="Enable post-implementation review phase (reviewer critiques code before merging)",
+    )
+    parser.add_argument(
+        "--use-main",
+        action="store_true",
+        help="Always branch from main (default: use current branch as base for story branches)",
     )
     parser.add_argument(
         "--model",
@@ -927,6 +934,7 @@ def main():
             verbose=args.verbose,
             git_enabled=not args.no_git,
             main_branch=args.main_branch,
+            use_main_as_base=args.use_main,
             review_enabled=args.review,
             model=args.model,
         )

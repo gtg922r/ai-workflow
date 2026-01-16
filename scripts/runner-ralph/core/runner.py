@@ -60,6 +60,7 @@ class RunnerConfig:
     prd_path: Path | None = None
     git_enabled: bool = True  # Enable git state management
     main_branch: str = "main"  # Name of main/default branch
+    use_main_as_base: bool = False  # If True, always branch from main; if False, use current branch
     review_enabled: bool = False  # Enable post-implementation review phase
     model: str | None = None  # Model to use (passed to agent CLI --model flag)
 
@@ -178,6 +179,7 @@ class Runner:
                     repo_path=self.config.project_path,
                     main_branch=self.config.main_branch,
                     on_output=self._on_output,
+                    use_current_branch_as_base=not self.config.use_main_as_base,
                 )
 
                 # Check if it's a git repo
@@ -189,6 +191,9 @@ class Runner:
                     # Check for clean working directory
                     if not self._check_git_clean_state():
                         return False
+
+                    # Initialize git manager to capture the base branch
+                    self.git.initialize()
 
             # Initialize agent
             agent_config = AgentConfig(
@@ -279,10 +284,10 @@ class Runner:
                 if self._on_output:
                     self._on_output(f"Committed changes: {commit_hash[:8]}")
 
-            # Merge to main
+            # Merge to base branch
             self.git.merge_to_main(delete_branch=True)
             if self._on_output:
-                self._on_output(f"Merged {story.id} to {self.config.main_branch}")
+                self._on_output(f"Merged {story.id} to {self.git.base_branch}")
 
             return True
 
@@ -323,7 +328,7 @@ class Runner:
             if status.is_story_branch:
                 self.git.return_to_main()
                 if self._on_output:
-                    self._on_output(f"Returned to {self.config.main_branch}")
+                    self._on_output(f"Returned to {self.git.base_branch}")
 
             return True
 
@@ -361,7 +366,7 @@ class Runner:
                 try:
                     self.git.abort_and_return_to_main(story.id)
                     if self._on_output:
-                        self._on_output(f"Reset branch and returned to {self.config.main_branch}")
+                        self._on_output(f"Reset branch and returned to {self.git.base_branch}")
                 except GitError as e:
                     if self._on_output:
                         self._on_output(f"Failed to reset branch: {e}")
@@ -816,7 +821,7 @@ End with: `<verdict>APPROVE</verdict>` or `<verdict>REJECT</verdict>`
         try:
             self.git.abort_and_return_to_main(target_id)
             if self._on_output:
-                self._on_output(f"Reset branch and returned to {self.config.main_branch}")
+                self._on_output(f"Reset branch and returned to {self.git.base_branch}")
             return True
         except GitError as e:
             if self._on_output:
