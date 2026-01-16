@@ -93,3 +93,8 @@
 [2026-01-16 09:36:11] 📋 Decision: Used a highly prescriptive prompt for the haiku generator to ensure the LLM strictly follows the 5-7-5 syllable rule and avoids any conversational filler, which is critical for the "clean output" requirement of Gemini CLI commands.
 
 [2026-01-16 09:36:11] 💡 Learning: The `{{args}}` placeholder in Gemini CLI TOML commands is versatile; including a check for empty args within the prompt itself (e.g., "If the topic is empty, respond with instructions") is a reliable way to handle missing required arguments without needing complex shell logic.
+
+[2026-01-16 09:36:11] ✓ Story Completed [command-haiku]: Gemini Command: Haiku Generator
+📋 Decision: Placed the `haiku` command in `commands/gemini/creative/` to maintain the organizational structure introduced in the previous `poem` command story. This groups creative/non-workflow tools together.
+📋 Decision: Used a highly prescriptive prompt for the haiku generator to ensure the LLM strictly follows the 5-7-5 syllable rule and avoids any conversational filler, which is critical for the "clean output" requirement of Gemini CLI commands.
+💡 Learning: The `{{args}}` placeholder in Gemini CLI TOML commands is versatile; including a check for empty args within the prompt itself (e.g., "If the topic is empty, respond with instructions") is a reliable way to handle missing required arguments without needing complex shell logic.

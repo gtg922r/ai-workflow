@@ -112,7 +112,7 @@
         "Takes a topic as a required argument.",
         "Output is formatted on three lines."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "command-limerick",
