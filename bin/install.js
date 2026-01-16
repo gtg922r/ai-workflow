@@ -26,10 +26,11 @@ const AGENTS = {
     name: 'Gemini CLI',
     globalBase: path.join(os.homedir(), '.gemini'),
     localBase: '.gemini',
-    supports: ['commands', 'skills'],
+    supports: ['commands', 'skills', 'extensions'],
     paths: {
       commands: 'commands',
       skills: 'skills',
+      extensions: 'extensions',
     },
   },
   'claude-code': {
@@ -77,6 +78,7 @@ function discoverComponents() {
   const components = {
     commands: [],
     skills: [],
+    extensions: [],
     scripts: [],
   };
 
@@ -104,6 +106,28 @@ function discoverComponents() {
           description,
         });
       }
+    }
+  }
+
+  // Discover extensions
+  const extensionsDir = path.join(REPO_ROOT, 'extensions');
+  if (fs.existsSync(extensionsDir)) {
+    const extensionNames = fs.readdirSync(extensionsDir, { withFileTypes: true })
+      .filter(d => d.isDirectory())
+      .map(d => d.name);
+    
+    for (const name of extensionNames) {
+      const extensionPath = path.join(extensionsDir, name);
+      const readmePath = path.join(extensionPath, 'README.md');
+      let description = 'Agent extension';
+      if (fs.existsSync(readmePath)) {
+        description = extractFirstLine(readmePath) || description;
+      }
+      components.extensions.push({
+        name,
+        path: extensionPath,
+        description,
+      });
     }
   }
 
@@ -330,6 +354,7 @@ async function main() {
   const hasComponents = 
     components.commands.length > 0 || 
     components.skills.length > 0 || 
+    components.extensions.length > 0 || 
     components.scripts.length > 0;
   
   if (!hasComponents) {
@@ -373,7 +398,7 @@ async function main() {
   // Step 3: Select components to install
   const selectedComponents = [];
   
-  // Commands (Gemini only)
+  // Commands
   if (agentConfig.supports.includes('commands') && components.commands.length > 0) {
     const selectedCommands = await checkbox({
       message: 'Select commands to install:',
@@ -381,6 +406,7 @@ async function main() {
         value: cmd,
         name: cmd.name,
         description: cmd.description,
+        checked: true,
       })),
     });
     selectedComponents.push(...selectedCommands.map(c => ({ ...c, type: 'command' })));
@@ -394,29 +420,38 @@ async function main() {
         value: skill,
         name: skill.name,
         description: skill.description,
+        checked: true,
       })),
     });
     selectedComponents.push(...selectedSkills.map(s => ({ ...s, type: 'skill' })));
   }
+
+  // Extensions
+  if (agentConfig.supports.includes('extensions') && components.extensions.length > 0) {
+    const selectedExtensions = await checkbox({
+      message: 'Select extensions to install:',
+      choices: components.extensions.map(ext => ({
+        value: ext,
+        name: ext.name,
+        description: ext.description,
+        checked: true,
+      })),
+    });
+    selectedComponents.push(...selectedExtensions.map(e => ({ ...e, type: 'extension' })));
+  }
   
   // Scripts (available for all agents, but install to custom location)
   if (components.scripts.length > 0) {
-    const installScripts = await confirm({
-      message: 'Would you like to install any scripts?',
-      default: false,
+    const selectedScripts = await checkbox({
+      message: 'Select scripts to install:',
+      choices: components.scripts.map(script => ({
+        value: script,
+        name: script.name,
+        description: script.description,
+        checked: false,
+      })),
     });
-    
-    if (installScripts) {
-      const selectedScripts = await checkbox({
-        message: 'Select scripts to install:',
-        choices: components.scripts.map(script => ({
-          value: script,
-          name: script.name,
-          description: script.description,
-        })),
-      });
-      selectedComponents.push(...selectedScripts.map(s => ({ ...s, type: 'script' })));
-    }
+    selectedComponents.push(...selectedScripts.map(s => ({ ...s, type: 'script' })));
   }
   
   if (selectedComponents.length === 0) {
@@ -481,6 +516,10 @@ async function main() {
       case 'skill':
         // Skills go to skills/<skill-name>/
         destPath = path.join(baseDir, agentConfig.paths.skills, component.name);
+        break;
+      case 'extension':
+        // Extensions go to extensions/<extension-name>/
+        destPath = path.join(baseDir, agentConfig.paths.extensions, component.name);
         break;
       case 'script':
         // Scripts go to scripts/<script-name>/
