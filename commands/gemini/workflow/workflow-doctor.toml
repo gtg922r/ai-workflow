@@ -1,0 +1,172 @@
+description = "Diagnose and validate your AI workflow environment, checking CLIs, configs, and installed components."
+prompt = """
+You are a diagnostic assistant for AI workflow environments. Your task is to analyze the user's setup and provide a comprehensive health check report.
+
+## Environment Information
+
+**Operating System:**
+!{uname -s 2>/dev/null || echo "Unknown"}
+
+**Shell:**
+!{echo $SHELL}
+
+**Home Directory:**
+!{echo $HOME}
+
+---
+
+## 1. Agent CLI Availability
+
+### Gemini CLI
+**Version:**
+!{gemini --version 2>/dev/null || echo "NOT INSTALLED"}
+
+### Claude Code (claude)
+**Version:**
+!{claude --version 2>/dev/null || echo "NOT INSTALLED"}
+
+### OpenAI Codex CLI
+**Version:**
+!{codex --version 2>/dev/null || echo "NOT INSTALLED"}
+
+---
+
+## 2. Configuration Directories
+
+### Gemini Configuration
+**Global config exists (~/.gemini):**
+!{test -d ~/.gemini && echo "YES" || echo "NO"}
+
+**Global commands dir (~/.gemini/commands):**
+!{test -d ~/.gemini/commands && echo "YES - $(ls ~/.gemini/commands 2>/dev/null | wc -l | tr -d ' ') items" || echo "NO"}
+
+**Global skills dir (~/.gemini/skills):**
+!{test -d ~/.gemini/skills && echo "YES - $(ls ~/.gemini/skills 2>/dev/null | wc -l | tr -d ' ') items" || echo "NO"}
+
+### Claude Configuration
+**Global config exists (~/.claude):**
+!{test -d ~/.claude && echo "YES" || echo "NO"}
+
+**Global skills dir (~/.claude/skills):**
+!{test -d ~/.claude/skills && echo "YES - $(ls ~/.claude/skills 2>/dev/null | wc -l | tr -d ' ') items" || echo "NO"}
+
+### Codex Configuration
+**Global config exists (~/.codex):**
+!{test -d ~/.codex && echo "YES" || echo "NO"}
+
+**Global skills dir (~/.codex/skills):**
+!{test -d ~/.codex/skills && echo "YES - $(ls ~/.codex/skills 2>/dev/null | wc -l | tr -d ' ') items" || echo "NO"}
+
+---
+
+## 3. Environment Variables (API Keys & Config)
+
+**GOOGLE_API_KEY:**
+!{test -n "$GOOGLE_API_KEY" && echo "SET (${#GOOGLE_API_KEY} chars)" || echo "NOT SET"}
+
+**GEMINI_API_KEY:**
+!{test -n "$GEMINI_API_KEY" && echo "SET (${#GEMINI_API_KEY} chars)" || echo "NOT SET"}
+
+**ANTHROPIC_API_KEY:**
+!{test -n "$ANTHROPIC_API_KEY" && echo "SET (${#ANTHROPIC_API_KEY} chars)" || echo "NOT SET"}
+
+**OPENAI_API_KEY:**
+!{test -n "$OPENAI_API_KEY" && echo "SET (${#OPENAI_API_KEY} chars)" || echo "NOT SET"}
+
+---
+
+## 4. Installed Components Detail
+
+### Gemini Commands (Global)
+!{ls -la ~/.gemini/commands 2>/dev/null || echo "Directory not found"}
+
+### Gemini Commands (Subdirectories)
+!{find ~/.gemini/commands -name "*.toml" 2>/dev/null | head -20 || echo "No commands found"}
+
+### Gemini Skills (Global)
+!{ls -la ~/.gemini/skills 2>/dev/null || echo "Directory not found"}
+
+### Claude Skills (Global)
+!{ls -la ~/.claude/skills 2>/dev/null || echo "Directory not found"}
+
+### Codex Skills (Global)
+!{ls -la ~/.codex/skills 2>/dev/null || echo "Directory not found"}
+
+---
+
+## 5. Symlink Verification
+
+### Check for broken symlinks in Gemini config
+!{find ~/.gemini -type l ! -exec test -e {} \\; -print 2>/dev/null | head -10 || echo "No broken symlinks (or directory not found)"}
+
+### Check for broken symlinks in Claude config
+!{find ~/.claude -type l ! -exec test -e {} \\; -print 2>/dev/null | head -10 || echo "No broken symlinks (or directory not found)"}
+
+### Check for broken symlinks in Codex config
+!{find ~/.codex -type l ! -exec test -e {} \\; -print 2>/dev/null | head -10 || echo "No broken symlinks (or directory not found)"}
+
+---
+
+## 6. Related Tools
+
+### GitHub CLI (gh)
+!{gh --version 2>/dev/null | head -1 || echo "NOT INSTALLED"}
+
+### Git
+!{git --version 2>/dev/null || echo "NOT INSTALLED"}
+
+### Node.js
+!{node --version 2>/dev/null || echo "NOT INSTALLED"}
+
+### Python
+!{python3 --version 2>/dev/null || python --version 2>/dev/null || echo "NOT INSTALLED"}
+
+---
+
+## User Context (if provided)
+{{args}}
+
+---
+
+## Instructions
+
+Based on the diagnostic information above, generate a comprehensive **Workflow Doctor Report** with the following sections:
+
+### Report Structure
+
+1. **Overall Health Status**
+   - Provide a quick summary: ✅ Healthy, ⚠️ Needs Attention, or ❌ Critical Issues
+   - List the number of issues found by severity
+
+2. **Agent CLI Status**
+   - For each CLI (Gemini, Claude, Codex): indicate if installed and version
+   - Flag any that are missing but might be needed based on installed components
+
+3. **Configuration Status**
+   - Report on each agent's configuration directory
+   - Note any missing directories that should exist based on installed CLIs
+
+4. **Environment Variables**
+   - List which API keys are configured
+   - Warn about any missing keys needed for installed CLIs
+   - Note: Never display actual key values, only whether they're set
+
+5. **Installed Components**
+   - Summarize commands, skills, and extensions found
+   - Identify any broken symlinks that need repair
+   - Note any components that appear to be from this ai-workflow repo
+
+6. **Actionable Recommendations**
+   - Provide specific, numbered steps to fix any issues
+   - Prioritize critical issues first
+   - Include exact commands when possible (e.g., `npm install -g @google/generative-ai-cli`)
+
+### Formatting Guidelines
+
+- Use clear headings and bullet points
+- Use emoji indicators: ✅ (good), ⚠️ (warning), ❌ (error), ℹ️ (info)
+- Keep recommendations actionable and specific
+- If everything looks healthy, celebrate it briefly and suggest optional improvements
+
+Remember: Be helpful but concise. Focus on actionable information.
+"""

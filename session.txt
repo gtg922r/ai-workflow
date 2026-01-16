@@ -1,7 +1,7 @@
 Session: ralph-20260114-235413-c6a510
 Started: 2026-01-14T23:54:13.116211
-Last Update: 2026-01-15T00:08:44.895201
-Total Runs: 3
+Last Update: 2026-01-15T00:10:13.784939
+Total Runs: 4
 
 --- Run History ---
 ✓ Run #1 [installer-npx] (279.4s)
@@ -12,3 +12,6 @@ Total Runs: 3
 
 ✓ Run #3 [runner-rename-ralph] (186.4s)
   <promise>COMPLETE</promise>
+
+✓ Run #4 [command-workflow-doctor] (87.6s)
+  **Usage**: Once installed, invoke with `/workflow:workflow-doctor` in Gemini CLI. Optionally pass context via args (e.g., `/workflow:workflow-doctor f

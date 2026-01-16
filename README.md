@@ -36,6 +36,7 @@ Refer to `AGENTS.md` for detailed operational context and guidelines on how AI a
 - **Workflow**
   - `compare-prs`: Compare multiple GitHub PRs and recommend the best one.
   - `create-pr`: Create a GitHub PR for local changes, intelligently handling branch state (main vs feature branch, unpushed commits).
+  - `workflow-doctor`: Diagnose and validate your AI workflow environment, checking CLIs, configs, API keys, and installed components with actionable recommendations.
 
 
 
