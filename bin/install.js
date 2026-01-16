@@ -6,7 +6,8 @@
  * Interactive CLI for installing AI workflow components (commands, skills, scripts)
  * to different AI agent targets (Gemini, Claude, Codex).
  * 
- * Usage: npx @ryancash/ai-workflow
+ * Usage:
+ *   npx --yes --package github:gtg922r/ai-workflow ai-workflow
  */
 
 import { select, checkbox, confirm } from '@inquirer/prompts';
