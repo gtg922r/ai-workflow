@@ -297,33 +297,39 @@ class Runner:
             return False
 
     def _commit_session_cleanup(self) -> bool:
-        """Commit any remaining session files (progress.txt, prd.json, worklogs).
+        """Commit any remaining session files and return to main branch.
 
-        Called at the end of the run to ensure git finishes clean.
+        Called at the end of the run to ensure git finishes clean and on main.
 
         Returns:
-            True if commit was made or nothing to commit, False on error
+            True if successful, False on error
         """
         if not self.git:
             return True
 
         try:
             status = self.git.get_status()
-            if status.is_clean:
-                return True
 
-            # Stage and commit session files
-            if self.git.stage_all_changes():
-                commit_hash = self.git.commit("chore: update session files (progress, prd, worklogs)")
-                if commit_hash:
-                    if self._on_output:
-                        self._on_output(f"Committed session cleanup: {commit_hash[:8]}")
-                return True
+            # Commit any uncommitted changes first
+            if not status.is_clean:
+                if self.git.stage_all_changes():
+                    commit_hash = self.git.commit("chore: update session files (progress, prd, worklogs)")
+                    if commit_hash:
+                        if self._on_output:
+                            self._on_output(f"Committed session cleanup: {commit_hash[:8]}")
+
+            # Return to main branch if on a story branch
+            status = self.git.get_status()  # Refresh status after commit
+            if status.is_story_branch:
+                self.git.return_to_main()
+                if self._on_output:
+                    self._on_output(f"Returned to {self.config.main_branch}")
+
             return True
 
         except GitError as e:
             if self._on_output:
-                self._on_output(f"Warning: Failed to commit session cleanup: {e}")
+                self._on_output(f"Warning: Failed to complete session cleanup: {e}")
             return False
 
     def _handle_story_failure(self, story: Story) -> None:

@@ -408,6 +408,17 @@ class GitManager:
             self._log(f"Deleting branch {branch_to_delete}", "🗑️")
             self._run_git("branch", "-D", branch_to_delete)
 
+    def return_to_main(self) -> None:
+        """Switch back to the main branch without discarding changes or deleting branches.
+
+        Use this for clean session end when work has been committed but we're still
+        on a story branch.
+        """
+        current = self.get_current_branch()
+        if current != self.main_branch:
+            self._log(f"Switching to {self.main_branch}", "🔀")
+            self._run_git("checkout", self.main_branch)
+
     def get_uncommitted_changes_summary(self) -> str:
         """Get a summary of uncommitted changes."""
         result = self._run_git("status", "--short")
