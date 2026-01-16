@@ -12,7 +12,7 @@
         "Takes a topic as a required argument.",
         "Output is formatted as a clear, readable poem."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "command-haiku",
@@ -24,7 +24,7 @@
         "Takes a topic as a required argument.",
         "Output is formatted on three lines."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "command-limerick",
@@ -36,7 +36,7 @@
         "Takes a topic as a required argument.",
         "Output is witty and topic-relevant."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "installer-defaults-refine",
