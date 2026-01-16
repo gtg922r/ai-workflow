@@ -296,6 +296,36 @@ class Runner:
             self.stats.errors.append(f"Git error during commit/merge: {e}")
             return False
 
+    def _commit_session_cleanup(self) -> bool:
+        """Commit any remaining session files (progress.txt, prd.json, worklogs).
+
+        Called at the end of the run to ensure git finishes clean.
+
+        Returns:
+            True if commit was made or nothing to commit, False on error
+        """
+        if not self.git:
+            return True
+
+        try:
+            status = self.git.get_status()
+            if status.is_clean:
+                return True
+
+            # Stage and commit session files
+            if self.git.stage_all_changes():
+                commit_hash = self.git.commit("chore: update session files (progress, prd, worklogs)")
+                if commit_hash:
+                    if self._on_output:
+                        self._on_output(f"Committed session cleanup: {commit_hash[:8]}")
+                return True
+            return True
+
+        except GitError as e:
+            if self._on_output:
+                self._on_output(f"Warning: Failed to commit session cleanup: {e}")
+            return False
+
     def _handle_story_failure(self, story: Story) -> None:
         """Handle story failure - offer to reset branch.
 
@@ -718,6 +748,9 @@ End with: `<verdict>APPROVE</verdict>` or `<verdict>REJECT</verdict>`
             await asyncio.sleep(1)
 
         self.stats.end_time = datetime.now()
+
+        # Commit any remaining session files to leave git clean
+        self._commit_session_cleanup()
 
         # Determine final state
         if self._stop_requested:
