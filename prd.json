@@ -82,7 +82,7 @@
       "title": "Add Post-Implementation Review Phase",
       "description": "Implement a 'Reviewer' step in the loop. After the implementing agent finishes (and verification passes), a second pass (or distinct agent role) critiques the code against `AGENTS.md` and best practices.",
       "acceptanceCriteria": [
-        "Add configuration to enable/disable review phase.",
+        "Add configuration to enable/disable review phase. By default, review is disabled.",
         "If enabled, trigger a 'Review' prompt after implementation success.",
         "Review prompt should see `git diff` and `AGENTS.md`.",
         "Output of review should be included in progress.txt",
@@ -91,16 +91,40 @@
       "passes": true
     },
     {
-      "id": "runner-prompts",
-      "title": "Support Task-Type Specific Prompts",
-      "description": "Allow different prompt strategies for different types of work (feature vs bug vs refactor) to optimize agent focus.",
+      "id": "command-poem-7",
+      "title": "Gemini Command: 7-Line Poem Generator",
+      "description": "Create a Gemini command that generates a 7-line poem about a specified topic.",
       "acceptanceCriteria": [
-        "Add `type` field to `Story` schema (enum: feature, bug, chore, test).",
-        "Update `core/runner.py` to look for `templates/prompt_{type}.md`.",
-        "Create optimized `prompt_feature.md` (creative/expansive) and `prompt_bug.md` (strict/analytic) templates.",
-        "Fall back to `prompt.md` if specific template missing."
+        "Command named `poem` added to `commands/gemini/creative/`.",
+        "Generates exactly 7 lines of poetry.",
+        "Takes a topic as a required argument.",
+        "Output is formatted as a clear, readable poem."
       ],
-      "passes": true
+      "passes": false
+    },
+    {
+      "id": "command-haiku",
+      "title": "Gemini Command: Haiku Generator",
+      "description": "Create a Gemini command that generates a haiku (5-7-5 syllable structure) about a specified topic.",
+      "acceptanceCriteria": [
+        "Command named `haiku` added to `commands/gemini/creative/`.",
+        "Follows the traditional 5-7-5 syllable structure.",
+        "Takes a topic as a required argument.",
+        "Output is formatted on three lines."
+      ],
+      "passes": false
+    },
+    {
+      "id": "command-limerick",
+      "title": "Gemini Command: Limerick Generator",
+      "description": "Create a Gemini command that generates a humorous limerick about a specified topic.",
+      "acceptanceCriteria": [
+        "Command named `limerick` added to `commands/gemini/creative/`.",
+        "Follows the AABBA rhyme scheme and traditional rhythm of a limerick.",
+        "Takes a topic as a required argument.",
+        "Output is witty and topic-relevant."
+      ],
+      "passes": false
     }
   ]
 }
