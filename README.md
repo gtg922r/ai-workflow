@@ -7,8 +7,21 @@ This repository serves as a centralized hub for personal AI agent workflows, too
 Install components directly via NPX:
 
 ```bash
-npx github:ryancash/ai-workflow
+# Recommended (works reliably across npm/npx versions)
+npx --yes --package github:gtg922r/ai-workflow ai-workflow
 ```
+
+If you prefer the shorter form, some environments also support:
+
+```bash
+npx github:gtg922r/ai-workflow
+```
+
+### Requirements
+
+- **Node.js**: `>= 18` (see `package.json#engines`)
+- **Git**: available on your PATH (`git --version`)
+- **Network access**: ability to fetch from GitHub
 
 The interactive installer will guide you through:
 - Selecting a target agent (Gemini CLI, Claude Code, or OpenAI Codex)
