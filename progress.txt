@@ -98,3 +98,10 @@
 📋 Decision: Placed the `haiku` command in `commands/gemini/creative/` to maintain the organizational structure introduced in the previous `poem` command story. This groups creative/non-workflow tools together.
 📋 Decision: Used a highly prescriptive prompt for the haiku generator to ensure the LLM strictly follows the 5-7-5 syllable rule and avoids any conversational filler, which is critical for the "clean output" requirement of Gemini CLI commands.
 💡 Learning: The `{{args}}` placeholder in Gemini CLI TOML commands is versatile; including a check for empty args within the prompt itself (e.g., "If the topic is empty, respond with instructions") is a reliable way to handle missing required arguments without needing complex shell logic.
+
+[2026-01-16 10:03:35] Run #1 [command-limerick]: ✓ Completed (49.2s)
+   Summary: ```
+
+[2026-01-16 10:03:35] 📋 Decision: Used a prescriptive prompt for the limerick generator to ensure strict adherence to the AABBA rhyme scheme and rhythmic structure, while also handling missing arguments gracefully by providing usage instructions.
+
+[2026-01-16 10:03:35] 💡 Learning: Grouping creative commands under `commands/gemini/creative/` continues the organizational pattern established by the `poem` and `haiku` stories, making the command library easier to navigate as it grows.
