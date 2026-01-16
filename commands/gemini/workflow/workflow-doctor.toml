@@ -149,6 +149,7 @@ Based on the diagnostic information above, generate a comprehensive **Workflow D
 1. **Overall Health Status**
    - Provide a quick summary: ✅ Healthy, ⚠️ Needs Attention, or ❌ Critical Issues
    - List the number of issues found by severity
+   - **Note:** Missing API keys alone should NOT downgrade the status from ✅ Healthy to ⚠️ Needs Attention, as most agents now support built-in auth flows.
 
 2. **Agent CLI Status**
    - For each CLI (Gemini, Claude, Codex): indicate if installed and version
@@ -158,10 +159,11 @@ Based on the diagnostic information above, generate a comprehensive **Workflow D
    - Report on each agent's configuration directory
    - Note any missing directories that should exist based on installed CLIs
 
-4. **Environment Variables**
+4. **Environment Variables & Auth**
    - List which API keys are configured
-   - Warn about any missing keys needed for installed CLIs
+   - Treat missing API keys as **informational** or **warnings** (ℹ️ or ⚠️), not critical errors.
    - Note: Never display actual key values, only whether they're set
+   - Primary Resolution: Suggest using the agent's built-in auth flow (e.g., `gcloud auth login`, `claude auth login`, `firebase login`) as the preferred method over manual API keys.
 
 5. **Installed Components**
    - Summarize commands, skills, and extensions found
@@ -172,6 +174,7 @@ Based on the diagnostic information above, generate a comprehensive **Workflow D
    - Provide specific, numbered steps to fix any issues
    - Prioritize critical issues first
    - Include exact commands when possible (e.g., `npm install -g @google/generative-ai-cli`)
+   - For missing API keys, recommend running the provider's auth login command (e.g., `gcloud auth application-default login`) as the first step.
 
 ### Formatting Guidelines
 
