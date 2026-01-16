@@ -1,0 +1,3 @@
+- fix the current console display. every single line has time stamp which means box shapes doesn't work 
+- add custom command for working with a prd doc. process the doc and add to prd.json, ask questions as you go.
+- add a skill for runner ralph (how it works, the architecture, infra, etc)
