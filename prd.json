@@ -124,7 +124,7 @@
         "Takes a topic as a required argument.",
         "Output is witty and topic-relevant."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "command-poem-5",
@@ -136,7 +136,7 @@
         "Takes a topic as a required argument.",
         "Output is formatted as a clear, readable poem."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "command-poem-3",
@@ -149,6 +149,6 @@
         "Output is formatted as a clear, readable poem."
       ],
       "passes": false
-    }       
+    }
   ]
 }
