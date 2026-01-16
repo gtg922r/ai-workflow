@@ -76,7 +76,7 @@ uv run scripts/runner-ralph/ralph.py
 Best for scripts or background execution.
 
 ```bash
-uv run scripts/runner-ralph/ralph.py --no-tui
+uv run scripts/runner-ralph/ralph.py
 ```
 
 ### Key Flags

@@ -6,20 +6,21 @@
 #     "rich>=13.0.0",
 # ]
 # ///
-"""Runner Ralph - TUI Application.
+"""Runner Ralph - Autonomous AI Agent Runner.
 
-A terminal user interface for running autonomous AI agent loops.
+A CLI application for running autonomous AI agent loops.
 
 Usage:
-    # TUI mode (default)
+    # Console mode (default)
     uv run scripts/runner-ralph/ralph.py
-    uv run scripts/runner-ralph/ralph.py --path /path/to/project
-
-    # Simple console mode (no TUI)
-    uv run scripts/runner-ralph/ralph.py --no-tui --agent cursor --iterations 3
+    uv run scripts/runner-ralph/ralph.py --agent cursor --iterations 3
 
     # Specify a model
-    uv run scripts/runner-ralph/ralph.py --no-tui --agent claude --model claude-sonnet-4-20250514
+    uv run scripts/runner-ralph/ralph.py --agent claude --model claude-sonnet-4-20250514
+
+    # Interactive TUI mode
+    uv run scripts/runner-ralph/ralph.py --tui
+    uv run scripts/runner-ralph/ralph.py --tui --path /path/to/project
 """
 
 from __future__ import annotations
@@ -859,9 +860,9 @@ def main():
         help="Project path (default: current directory)",
     )
     parser.add_argument(
-        "--no-tui",
+        "--tui",
         action="store_true",
-        help="Run in simple console mode without the TUI",
+        help="Run in interactive TUI mode",
     )
     parser.add_argument(
         "--agent",
@@ -923,8 +924,12 @@ def main():
 
     project_path = args.path.resolve()
 
-    if args.no_tui:
-        # Simple console mode
+    if args.tui:
+        # Full TUI mode
+        app = RalphApp(project_path=project_path)
+        app.run()
+    else:
+        # Console mode (default)
         agent_type = AgentType.CURSOR if args.agent == "cursor" else AgentType.CLAUDE
         run_console_mode(
             project_path=project_path,
@@ -938,10 +943,6 @@ def main():
             review_enabled=args.review,
             model=args.model,
         )
-    else:
-        # Full TUI mode
-        app = RalphApp(project_path=project_path)
-        app.run()
 
 
 if __name__ == "__main__":

@@ -127,3 +127,23 @@
 
 [2026-01-16 15:53:08] Run #1 [installer-defaults-refine]: ✓ Completed (123.0s)
    Summary: <promise>COMPLETE</promise>
+
+[2026-01-16 15:53:09] ✓ Story Completed [installer-defaults-refine]: Refine Installer Defaults & Script Selection
+
+[2026-01-16 15:54:23] Run #1 [ralph-cli-default]: ✓ Completed
+   Summary: <promise>COMPLETE</promise>
+
+[2026-01-16 15:54:23] 📋 Decision: Made console mode the default for Runner Ralph by switching the argparse logic from `--no-tui` (defaulting to TUI) to `--tui` (defaulting to console). This simplifies the common use case of running in headless/CLI mode.
+
+[2026-01-16 15:54:23] 📋 Decision: Updated README.md and SKILL.md to reflect the new default CLI behavior, ensuring users are aware of the switch and how to re-enable TUI mode if desired.
+
+[2026-01-16 15:54:23] ✓ Story Completed [ralph-cli-default]: Make Console CLI the Default for Runner Ralph
+📋 Decision: Made console mode the default for Runner Ralph by switching the argparse logic from `--no-tui` (defaulting to TUI) to `--tui` (defaulting to console). This simplifies the common use case of running in headless/CLI mode.
+📋 Decision: Updated README.md and SKILL.md to reflect the new default CLI behavior, ensuring users are aware of the switch and how to re-enable TUI mode if desired.
+
+[2026-01-16 15:54:41] Run #2 [ralph-cli-default]: ✓ Completed (91.6s)
+   Summary: <promise>COMPLETE</promise>
+
+[2026-01-16 15:54:41] 📋 Decision: Made console mode the default for Runner Ralph by switching the argparse logic from `--no-tui` (defaulting to TUI) to `--tui` (defaulting to console). This simplifies the common use case of running in headless/CLI mode.
+
+[2026-01-16 15:54:41] 💡 Learning: The existing ConsoleRunner implementation already provided the required Rich-based formatting, so only the entry point logic needed updating.
