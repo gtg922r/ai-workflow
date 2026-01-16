@@ -46,14 +46,9 @@ Refer to `AGENTS.md` for detailed operational context and guidelines on how AI a
 ## Available Commands
 
 ### Gemini
-- **Workflow**
-  - `compare-prs`: Compare multiple GitHub PRs and recommend the best one.
-  - `create-pr`: Create a GitHub PR for local changes, intelligently handling branch state (main vs feature branch, unpushed commits).
-  - `workflow-doctor`: Diagnose and validate your AI workflow environment, checking CLIs, configs, API keys, and installed components with actionable recommendations.
-- **Creative**
-  - `haiku`: Generate a haiku (5-7-5 syllable structure) about a specified topic.
-  - `limerick`: Generate a humorous limerick about a specified topic.
-  - `poem`: Generate a 7-line poem about a specified topic.
+  - `workflow-doctor`: Check for common workflow issues and suggest fixes.
+  - `create-pr`: Create a pull request from the current branch.
+  - `compare-prs`: Compare two pull requests to see what has changed.
 
 
 

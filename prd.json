@@ -10,7 +10,7 @@
         "The command should be able to pull a github PR for changes from the main branch to the current branch. If in a branch already, PR should include local changes on top of the branch. If not on a branch, then PR should be any local changes. If there have been commits to main that have not been pusehd to origin, then ask the user if those should be part of the PR first, or if they should just be pushed straight to origin",
         "The command should use any passed args to add clarity as to the scope of the PR"
       ],
-      "passes": true
+      "passes": false
     },
     {
       "id": "runner-git",
@@ -22,7 +22,7 @@
         "Upon successful completion (verification + review), Runner stages all changes and commits with Story title. Merge back to local main.",
         "On failure/reset, offer to hard reset the temporary branch."
       ],
-      "passes": true
+      "passes": false
     },
     {
       "id": "installer-npx",
@@ -36,7 +36,7 @@
         "Automatically copies or symlinks files to agent-specific directories (e.g., ~/.gemini/commands).",
         "Verifies installation success and provides a summary of actions."
       ],
-      "passes": true
+      "passes": false
     },
     {
       "id": "runner-ui-polish",
@@ -49,7 +49,7 @@
         "Improve the layout of iteration summaries, cost reports, and error messages for better scannability.",
         "Maintain compatibility with standard terminal themes while providing a 'premium' CLI feel."
       ],
-      "passes": true
+      "passes": false
     },
     {
       "id": "runner-rename-ralph",
@@ -62,7 +62,7 @@
         "Ensure the system remains fully functional and passes all tests after the rename.",
         "Verify that `.gitignore` and other configuration files are updated to reflect the new directory name."
       ],
-      "passes": true
+      "passes": false
     },
     {
       "id": "command-workflow-doctor",
@@ -75,7 +75,7 @@
         "Verifies that installed skills and extensions are correctly symlinked or copied to their respective target directories.",
         "Provides a clear report with actionable feedback for any missing or misconfigured components."
       ],
-      "passes": true
+      "passes": false
     },
     {
       "id": "runner-review",
@@ -88,7 +88,7 @@
         "Output of review should be included in progress.txt",
         "If Reviewer output contains 'REJECT', reopen the story with feedback. If 'APPROVE', complete it."
       ],
-      "passes": true
+      "passes": false
     },
     {
       "id": "command-poem-7",
@@ -100,7 +100,7 @@
         "Takes a topic as a required argument.",
         "Output is formatted as a clear, readable poem."
       ],
-      "passes": true
+      "passes": false
     },
     {
       "id": "command-haiku",
@@ -112,7 +112,7 @@
         "Takes a topic as a required argument.",
         "Output is formatted on three lines."
       ],
-      "passes": true
+      "passes": false
     },
     {
       "id": "command-limerick",
@@ -124,7 +124,7 @@
         "Takes a topic as a required argument.",
         "Output is witty and topic-relevant."
       ],
-      "passes": true
+      "passes": false
     },
     {
       "id": "command-poem-5",
@@ -136,7 +136,7 @@
         "Takes a topic as a required argument.",
         "Output is formatted as a clear, readable poem."
       ],
-      "passes": true
+      "passes": false
     },
     {
       "id": "command-poem-3",
