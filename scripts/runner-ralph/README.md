@@ -118,6 +118,10 @@ The TUI allows you to configure:
 - **Auto-restart** - Automatically restart when PRD is complete
 - **Review Phase** - Enable post-implementation code review before merging
 
+In console mode (`--no-tui`), you can also specify:
+
+- **Model** (`--model`, `-m`) - Specific model to use (e.g., `claude-sonnet-4-20250514`)
+
 ## File Structure
 
 ```
@@ -229,6 +233,10 @@ uv run ralph.py --no-git
 
 # Use a different main branch name
 uv run ralph.py --main-branch develop
+
+# Specify a model to use (passed to agent CLI --model flag)
+uv run ralph.py --model claude-sonnet-4-20250514
+uv run ralph.py -m gpt-4o
 ```
 
 ### Dirty Working Directory

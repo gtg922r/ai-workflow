@@ -88,6 +88,7 @@ class CursorAgent(AgentBackend):
         - `-p` for print/non-interactive mode (runs autonomously)
         - `--force` to skip confirmations
         - `--output-format text` for readable output
+        - `--model` for model selection (if specified)
         """
         cli = self._find_cli()
         if not cli:
@@ -101,8 +102,14 @@ class CursorAgent(AgentBackend):
             "-p",  # Print/non-interactive mode
             "--force",  # Skip confirmations for headless operation
             "--output-format", "text",  # Readable output (json also available)
-            prompt,  # Prompt as positional argument
         ]
+
+        # Add model selection if specified
+        if self.config.model:
+            cmd.extend(["--model", self.config.model])
+
+        # Add prompt as positional argument
+        cmd.append(prompt)
 
         # Add any extra arguments
         cmd.extend(self.config.extra_args)

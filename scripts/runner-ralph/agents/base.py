@@ -28,6 +28,7 @@ class AgentConfig:
     allowed_tools: list[str] | None = None
     max_tokens: int | None = None
     timeout_seconds: int = 600  # 10 minutes default
+    model: str | None = None  # Model to use (e.g., "claude-sonnet-4-20250514")
     extra_args: list[str] = field(default_factory=list)
 
 

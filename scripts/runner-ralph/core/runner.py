@@ -61,6 +61,7 @@ class RunnerConfig:
     git_enabled: bool = True  # Enable git state management
     main_branch: str = "main"  # Name of main/default branch
     review_enabled: bool = False  # Enable post-implementation review phase
+    model: str | None = None  # Model to use (passed to agent CLI --model flag)
 
 
 @dataclass
@@ -194,6 +195,7 @@ class Runner:
                 working_dir=self.config.project_path,
                 allow_network=self.config.allow_network,
                 timeout_seconds=self.config.timeout_seconds,
+                model=self.config.model,
             )
 
             self.agent = create_agent(self.config.agent_type, agent_config)

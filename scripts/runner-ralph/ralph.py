@@ -17,6 +17,9 @@ Usage:
 
     # Simple console mode (no TUI)
     uv run scripts/runner-ralph/ralph.py --no-tui --agent cursor --iterations 3
+
+    # Specify a model
+    uv run scripts/runner-ralph/ralph.py --no-tui --agent claude --model claude-sonnet-4-20250514
 """
 
 from __future__ import annotations
@@ -172,6 +175,7 @@ class ConsoleRunner:
             main_branch=self.config.main_branch,
             review_enabled=self.config.review_enabled,
             version=version,
+            model=self.config.model,
         )
 
         if self.verbose:
@@ -234,6 +238,7 @@ def run_console_mode(
     git_enabled: bool = True,
     main_branch: str = "main",
     review_enabled: bool = False,
+    model: str | None = None,
 ) -> None:
     """Run the agent in simple console mode (no TUI)."""
     config = RunnerConfig(
@@ -245,6 +250,7 @@ def run_console_mode(
         git_enabled=git_enabled,
         main_branch=main_branch,
         review_enabled=review_enabled,
+        model=model,
     )
 
     runner = ConsoleRunner(project_path, config, verbose=verbose)
@@ -899,6 +905,13 @@ def main():
         action="store_true",
         help="Enable post-implementation review phase (reviewer critiques code before merging)",
     )
+    parser.add_argument(
+        "--model",
+        "-m",
+        type=str,
+        default=None,
+        help="Model to use (e.g., claude-sonnet-4-20250514, gpt-4o). Passed to agent CLI --model flag.",
+    )
     args = parser.parse_args()
 
     project_path = args.path.resolve()
@@ -915,6 +928,7 @@ def main():
             git_enabled=not args.no_git,
             main_branch=args.main_branch,
             review_enabled=args.review,
+            model=args.model,
         )
     else:
         # Full TUI mode

@@ -99,6 +99,10 @@ class ClaudeAgent(AgentBackend):
             "--dangerously-skip-permissions",  # YOLO mode
         ]
 
+        # Add model selection if specified
+        if self.config.model:
+            cmd.extend(["--model", self.config.model])
+
         # Add allowed tools for sandboxing
         allowed_tools = self.config.allowed_tools or self.DEFAULT_ALLOWED_TOOLS
         if allowed_tools:

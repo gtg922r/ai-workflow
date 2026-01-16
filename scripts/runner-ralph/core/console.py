@@ -381,6 +381,7 @@ class ConsoleUI:
         main_branch: str = "main",
         review_enabled: bool = False,
         version: str | None = None,
+        model: str | None = None,
     ) -> None:
         """Display the application banner with configuration.
 
@@ -394,6 +395,7 @@ class ConsoleUI:
             main_branch: Main branch name
             review_enabled: Whether review phase is enabled
             version: Optional agent version
+            model: Optional model name
         """
         self.console.print()
 
@@ -405,6 +407,8 @@ class ConsoleUI:
         table.add_row("Agent:", agent.title())
         if version:
             table.add_row("Version:", version)
+        if model:
+            table.add_row("Model:", model)
         table.add_row("Iterations:", str(iterations))
         table.add_row("Project:", str(project))
         table.add_row("Git:", "enabled" if git_enabled else "disabled")
