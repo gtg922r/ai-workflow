@@ -74,7 +74,7 @@ class GitManager:
     """Manages git operations for the runner.
 
     Ensures each story is developed on an isolated branch and merged back
-    cleanly to main upon completion.
+    cleanly to the base branch upon completion.
     """
 
     BRANCH_PREFIX = "ralph"
@@ -84,6 +84,7 @@ class GitManager:
         repo_path: Path,
         main_branch: str = "main",
         on_output: Callable[[str], None] | None = None,
+        use_current_branch_as_base: bool = True,
     ):
         """Initialize the git manager.
 
@@ -91,10 +92,14 @@ class GitManager:
             repo_path: Path to the git repository
             main_branch: Name of the main/default branch (typically 'main' or 'master')
             on_output: Optional callback for logging git operations
+            use_current_branch_as_base: If True, use the current branch as the base for
+                story branches. If False, always use main_branch as the base.
         """
         self.repo_path = repo_path
         self.main_branch = main_branch
         self._on_output = on_output
+        self._use_current_branch_as_base = use_current_branch_as_base
+        self._base_branch: str | None = None  # Set during initialize()
 
     def _log(self, message: str, symbol: str = "📦") -> None:
         """Log a message if callback is set.
@@ -105,6 +110,36 @@ class GitManager:
         """
         if self._on_output:
             self._on_output(f"[git] {symbol} {message}")
+
+    @property
+    def base_branch(self) -> str:
+        """Get the base branch for story branches.
+
+        Returns main_branch if not yet initialized or if use_current_branch_as_base is False.
+        """
+        return self._base_branch or self.main_branch
+
+    def initialize(self) -> str:
+        """Initialize the git manager and determine the base branch.
+
+        Call this after confirming clean state to capture the starting branch.
+
+        Returns:
+            The base branch name that will be used for story branches.
+        """
+        if self._use_current_branch_as_base:
+            self._base_branch = self.get_current_branch()
+            if self._base_branch != self.main_branch:
+                self._log(f"Using current branch '{self._base_branch}' as base", "🎯")
+            else:
+                self._log(f"On {self.main_branch}, using as base", "🎯")
+        else:
+            self._base_branch = self.main_branch
+            current = self.get_current_branch()
+            if current != self.main_branch:
+                self._log(f"Will use {self.main_branch} as base (--use-main)", "🎯")
+
+        return self._base_branch
 
     def _run_git(
         self,
@@ -223,6 +258,7 @@ class GitManager:
         """Create and switch to a story branch.
 
         If the branch already exists, switches to it instead.
+        New branches are created from base_branch (current branch at start, or main if --use-main).
 
         Args:
             story_id: The story identifier
@@ -246,12 +282,12 @@ class GitManager:
                 self._log(f"Switching to existing branch {branch_name}", "🔀")
                 self._run_git("checkout", branch_name)
             else:
-                # Create new branch from main
-                self._log(f"Creating new branch {branch_name} from {self.main_branch}", "🌿")
+                # Create new branch from base_branch
+                self._log(f"Creating new branch {branch_name} from {self.base_branch}", "🌿")
 
-                # Ensure we're on main before creating branch
-                if current != self.main_branch:
-                    self._run_git("checkout", self.main_branch)
+                # Ensure we're on base_branch before creating branch
+                if current != self.base_branch:
+                    self._run_git("checkout", self.base_branch)
 
                 self._run_git("checkout", "-b", branch_name)
 
@@ -314,7 +350,7 @@ class GitManager:
         return self.commit(message)
 
     def merge_to_main(self, delete_branch: bool = True) -> bool:
-        """Merge current story branch back to main.
+        """Merge current story branch back to base branch.
 
         Args:
             delete_branch: Whether to delete the story branch after merge
@@ -329,14 +365,14 @@ class GitManager:
         status = self.get_status()
 
         if not status.is_story_branch:
-            raise BranchError("Not on a story branch, cannot merge to main")
+            raise BranchError("Not on a story branch, cannot merge to base")
 
         story_branch = status.current_branch
-        self._log(f"Merging {story_branch} to {self.main_branch}", "🔀")
+        self._log(f"Merging {story_branch} to {self.base_branch}", "🔀")
 
         try:
-            # Switch to main
-            self._run_git("checkout", self.main_branch)
+            # Switch to base branch
+            self._run_git("checkout", self.base_branch)
 
             # Merge the story branch
             self._run_git("merge", story_branch, "--no-ff", "-m", f"Merge branch '{story_branch}'")
@@ -377,8 +413,8 @@ class GitManager:
         self._run_git("reset", "--hard", "HEAD")
         self._run_git("clean", "-fd")
 
-    def abort_and_return_to_main(self, story_id: str | None = None) -> None:
-        """Abort current work and return to main branch.
+    def abort_and_return_to_base(self, story_id: str | None = None) -> None:
+        """Abort current work and return to base branch.
 
         Discards all changes and optionally deletes the story branch.
 
@@ -398,26 +434,32 @@ class GitManager:
         self._run_git("reset", "--hard", "HEAD", check=False)
         self._run_git("clean", "-fd", check=False)
 
-        # Switch to main
-        if status.current_branch != self.main_branch:
-            self._log(f"Switching to {self.main_branch}", "🔀")
-            self._run_git("checkout", self.main_branch)
+        # Switch to base branch
+        if status.current_branch != self.base_branch:
+            self._log(f"Switching to {self.base_branch}", "🔀")
+            self._run_git("checkout", self.base_branch)
 
         # Delete the story branch if it exists
         if branch_to_delete and self.branch_exists(branch_to_delete):
             self._log(f"Deleting branch {branch_to_delete}", "🗑️")
             self._run_git("branch", "-D", branch_to_delete)
 
-    def return_to_main(self) -> None:
-        """Switch back to the main branch without discarding changes or deleting branches.
+    # Alias for backward compatibility
+    abort_and_return_to_main = abort_and_return_to_base
+
+    def return_to_base(self) -> None:
+        """Switch back to the base branch without discarding changes or deleting branches.
 
         Use this for clean session end when work has been committed but we're still
         on a story branch.
         """
         current = self.get_current_branch()
-        if current != self.main_branch:
-            self._log(f"Switching to {self.main_branch}", "🔀")
-            self._run_git("checkout", self.main_branch)
+        if current != self.base_branch:
+            self._log(f"Switching to {self.base_branch}", "🔀")
+            self._run_git("checkout", self.base_branch)
+
+    # Alias for backward compatibility
+    return_to_main = return_to_base
 
     def get_uncommitted_changes_summary(self) -> str:
         """Get a summary of uncommitted changes."""
@@ -429,22 +471,28 @@ class GitManager:
         result = self._run_git("diff", "--cached", "--stat", check=False)
         return result.stdout.strip()
 
-    def get_diff_from_main(self) -> str:
-        """Get the full diff of changes from the main branch.
+    def get_diff_from_base(self) -> str:
+        """Get the full diff of changes from the base branch.
 
         This is useful for review purposes to see all changes made in the story branch.
 
         Returns:
-            The diff output showing all changes from main branch
+            The diff output showing all changes from base branch
         """
-        result = self._run_git("diff", self.main_branch, "--", check=False)
+        result = self._run_git("diff", self.base_branch, "--", check=False)
         return result.stdout.strip()
 
-    def get_diff_stat_from_main(self) -> str:
-        """Get diff statistics from the main branch.
+    # Alias for backward compatibility
+    get_diff_from_main = get_diff_from_base
+
+    def get_diff_stat_from_base(self) -> str:
+        """Get diff statistics from the base branch.
 
         Returns:
             Summary of files changed, insertions, and deletions
         """
-        result = self._run_git("diff", self.main_branch, "--stat", check=False)
+        result = self._run_git("diff", self.base_branch, "--stat", check=False)
         return result.stdout.strip()
+
+    # Alias for backward compatibility
+    get_diff_stat_from_main = get_diff_stat_from_base
