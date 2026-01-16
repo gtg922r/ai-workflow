@@ -80,34 +80,46 @@ You are a diagnostic assistant for AI workflow environments. Your task is to ana
 ### Gemini Commands (Global)
 !{ls -la ~/.gemini/commands 2>/dev/null || echo "Directory not found"}
 
-### Gemini Commands (Subdirectories)
-!{find ~/.gemini/commands -name "*.toml" 2>/dev/null | head -20 || echo "No commands found"}
+### Gemini Commands (Installed from ai-workflow)
+!{find ~/.gemini/commands -type l -ls 2>/dev/null | grep "ai-workflow" || echo "No ai-workflow commands found in ~/.gemini/commands"}
 
 ### Gemini Skills (Global)
 !{ls -la ~/.gemini/skills 2>/dev/null || echo "Directory not found"}
 
+### Gemini Skills (Installed from ai-workflow)
+!{find ~/.gemini/skills -type l -ls 2>/dev/null | grep "ai-workflow" || echo "No ai-workflow skills found in ~/.gemini/skills"}
+
 ### Claude Skills (Global)
 !{ls -la ~/.claude/skills 2>/dev/null || echo "Directory not found"}
+
+### Claude Skills (Installed from ai-workflow)
+!{find ~/.claude/skills -type l -ls 2>/dev/null | grep "ai-workflow" || echo "No ai-workflow skills found in ~/.claude/skills"}
 
 ### Codex Skills (Global)
 !{ls -la ~/.codex/skills 2>/dev/null || echo "Directory not found"}
 
----
-
-## 5. Symlink Verification
-
-### Check for broken symlinks in Gemini config
-!{find ~/.gemini -type l ! -exec test -e {} \\; -print 2>/dev/null | head -10 || echo "No broken symlinks (or directory not found)"}
-
-### Check for broken symlinks in Claude config
-!{find ~/.claude -type l ! -exec test -e {} \\; -print 2>/dev/null | head -10 || echo "No broken symlinks (or directory not found)"}
-
-### Check for broken symlinks in Codex config
-!{find ~/.codex -type l ! -exec test -e {} \\; -print 2>/dev/null | head -10 || echo "No broken symlinks (or directory not found)"}
+### Codex Skills (Installed from ai-workflow)
+!{find ~/.codex/skills -type l -ls 2>/dev/null | grep "ai-workflow" || echo "No ai-workflow skills found in ~/.codex/skills"}
 
 ---
 
-## 6. Related Tools
+## 5. Symlink & Copy Verification
+
+### Check for broken symlinks
+!{find ~/.gemini ~/.claude ~/.codex -type l ! -exec test -e {} \\; -print 2>/dev/null | head -10 || echo "No broken symlinks found"}
+
+### Check for components copied instead of symlinked (from ai-workflow)
+!{grep -r "ai-workflow" ~/.gemini ~/.claude ~/.codex 2>/dev/null | head -5 && echo "Found potential copies or references" || echo "No direct file copies detected via grep"}
+
+---
+
+## 6. Related Tools & Runner Ralph
+
+### Runner Ralph (scripts/runner-ralph/ralph.py)
+!{test -f scripts/runner-ralph/ralph.py && echo "FOUND in current directory" || echo "NOT FOUND in current directory"}
+
+### Extensions Directory
+!{test -d extensions && echo "FOUND in current directory" || echo "NOT FOUND in current directory"}
 
 ### GitHub CLI (gh)
 !{gh --version 2>/dev/null | head -1 || echo "NOT INSTALLED"}

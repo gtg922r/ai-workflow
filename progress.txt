@@ -59,3 +59,10 @@
 
 [2026-01-15 00:10:13] Run #4 [command-workflow-doctor]: ✓ Completed (87.6s)
    Summary: **Usage**: Once installed, invoke with `/workflow:workflow-doctor` in Gemini CLI. Optionally pass context via args (e.g., `/workflow:workflow-doctor f
+
+[2026-01-16 09:34:23] Run #1 [command-workflow-doctor]: ✓ Completed (75.6s)
+   Summary: <promise>COMPLETE</promise>
+
+[2026-01-16 09:34:23] 📋 Decision: Enhanced `workflow-doctor.toml` to specifically check for `ai-workflow` repository components in global agent configuration directories (~/.gemini, etc.). This ensures that symlinks or copies from this specific project are correctly identified and reported.
+
+[2026-01-16 09:34:23] 💡 Learning: The Gemini CLI's `!{command}` syntax allows for powerful self-diagnosing commands. Using `grep "ai-workflow"` on `find -ls` output is an effective way to verify that local project components are correctly linked into the agent's global configuration.
