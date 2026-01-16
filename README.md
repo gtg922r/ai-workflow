@@ -38,6 +38,7 @@ Refer to `AGENTS.md` for detailed operational context and guidelines on how AI a
   - `create-pr`: Create a GitHub PR for local changes, intelligently handling branch state (main vs feature branch, unpushed commits).
   - `workflow-doctor`: Diagnose and validate your AI workflow environment, checking CLIs, configs, API keys, and installed components with actionable recommendations.
 - **Creative**
+  - `haiku`: Generate a haiku (5-7-5 syllable structure) about a specified topic.
   - `poem`: Generate a 7-line poem about a specified topic.
 
 

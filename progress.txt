@@ -79,3 +79,17 @@
 [2026-01-16 09:35:22] 📋 Decision: Implemented the `poem` command with specific prompt instructions to ensure the output is exactly 7 lines and contains no additional conversational text, meeting the requirement for a clean, readable output.
 
 [2026-01-16 09:35:22] 💡 Learning: The Gemini CLI command format (TOML) is highly effective for defining reusable prompts that can be easily shared and installed across different environments using the project's NPX installer.
+
+[2026-01-16 09:35:22] ✓ Story Completed [command-poem-7]: Gemini Command: 7-Line Poem Generator
+📋 Decision: Created a new `creative` directory for Gemini commands to provide a logical grouping for non-workflow tools, anticipating the addition of more creative commands like `haiku` and `limerick`.
+📋 Decision: Implemented the `poem` command with specific prompt instructions to ensure the output is exactly 7 lines and contains no additional conversational text, meeting the requirement for a clean, readable output.
+💡 Learning: The Gemini CLI command format (TOML) is highly effective for defining reusable prompts that can be easily shared and installed across different environments using the project's NPX installer.
+
+[2026-01-16 09:36:11] Run #3 [command-haiku]: ✓ Completed (48.4s)
+   Summary: <promise>COMPLETE</promise>
+
+[2026-01-16 09:36:11] 📋 Decision: Placed the `haiku` command in `commands/gemini/creative/` to maintain the organizational structure introduced in the previous `poem` command story. This groups creative/non-workflow tools together.
+
+[2026-01-16 09:36:11] 📋 Decision: Used a highly prescriptive prompt for the haiku generator to ensure the LLM strictly follows the 5-7-5 syllable rule and avoids any conversational filler, which is critical for the "clean output" requirement of Gemini CLI commands.
+
+[2026-01-16 09:36:11] 💡 Learning: The `{{args}}` placeholder in Gemini CLI TOML commands is versatile; including a check for empty args within the prompt itself (e.g., "If the topic is empty, respond with instructions") is a reliable way to handle missing required arguments without needing complex shell logic.
