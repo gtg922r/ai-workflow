@@ -265,6 +265,14 @@ uv run ralph.py --use-main --main-branch develop
 ### CLI Options
 
 ```bash
+# Specify a custom PRD path
+uv run ralph.py --prd custom-prd.json
+uv run ralph.py -p custom-prd.json
+
+# Specify a custom project path (default: current directory)
+uv run ralph.py --path /path/to/project
+uv run ralph.py -d /path/to/project
+
 # Disable git management entirely
 uv run ralph.py --no-git
 

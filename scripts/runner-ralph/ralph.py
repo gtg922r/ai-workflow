@@ -251,6 +251,7 @@ def run_console_mode(
     use_main_as_base: bool = False,
     review_enabled: bool = False,
     model: str | None = None,
+    prd_path: Path | None = None,
 ) -> None:
     """Run the agent in simple console mode (no TUI)."""
     config = RunnerConfig(
@@ -264,6 +265,7 @@ def run_console_mode(
         use_main_as_base=use_main_as_base,
         review_enabled=review_enabled,
         model=model,
+        prd_path=prd_path,
     )
 
     runner = ConsoleRunner(
@@ -347,10 +349,12 @@ class ConfigScreen(ModalScreen[RunnerConfig | None]):
         self,
         project_path: Path,
         available_agents: list[tuple[AgentType, bool, str | None]],
+        prd_path: Path | None = None,
     ):
         super().__init__()
         self.project_path = project_path
         self.available_agents = available_agents
+        self.prd_path = prd_path
 
     def compose(self) -> ComposeResult:
         with Container(id="config-dialog"):
@@ -441,6 +445,7 @@ class ConfigScreen(ModalScreen[RunnerConfig | None]):
             allow_network=network_switch.value,
             auto_restart=restart_switch.value,
             review_enabled=review_switch.value,
+            prd_path=self.prd_path,
         )
 
         self.dismiss(config)
@@ -582,9 +587,10 @@ class RalphApp(App):
         Binding("c", "configure", "Configure"),
     ]
 
-    def __init__(self, project_path: Path | None = None):
+    def __init__(self, project_path: Path | None = None, prd_path: Path | None = None):
         super().__init__()
         self.project_path = project_path or Path.cwd()
+        self.prd_path = prd_path
         self.controller = RunnerController(self.project_path)
         self.config: RunnerConfig | None = None
         self._run_task: asyncio.Task | None = None
@@ -643,7 +649,7 @@ class RalphApp(App):
 
     def _update_prd_display(self) -> None:
         """Update the PRD status display."""
-        prd_path = self.project_path / "prd.json"
+        prd_path = self.prd_path or (self.project_path / "prd.json")
         prd_status = self.query_one("#prd-status", Static)
         prd_progress = self.query_one("#prd-progress", ProgressBar)
 
@@ -658,7 +664,7 @@ class RalphApp(App):
             except Exception as e:
                 prd_status.update(f"Error loading PRD: {e}")
         else:
-            prd_status.update("No prd.json found")
+            prd_status.update(f"No {prd_path.name} found")
 
     def _update_state_display(self, state: RunnerState) -> None:
         """Update the state indicator."""
@@ -771,7 +777,7 @@ class RalphApp(App):
 
         # Show config screen
         config = await self.push_screen_wait(
-            ConfigScreen(self.project_path, available_agents)
+            ConfigScreen(self.project_path, available_agents, prd_path=self.prd_path)
         )
 
         if not config:
@@ -843,7 +849,7 @@ class RalphApp(App):
         available_agents = self.controller.get_available_agents()
 
         config = await self.push_screen_wait(
-            ConfigScreen(self.project_path, available_agents)
+            ConfigScreen(self.project_path, available_agents, prd_path=self.prd_path)
         )
 
         if config:
@@ -866,10 +872,17 @@ def main():
     )
     parser.add_argument(
         "--path",
-        "-p",
+        "-d",
         type=Path,
         default=Path.cwd(),
         help="Project path (default: current directory)",
+    )
+    parser.add_argument(
+        "--prd",
+        "-p",
+        type=Path,
+        default=None,
+        help="Path to the PRD JSON file (default: prd.json in project path)",
     )
     parser.add_argument(
         "--tui",
@@ -943,7 +956,7 @@ def main():
 
     if args.tui:
         # Full TUI mode
-        app = RalphApp(project_path=project_path)
+        app = RalphApp(project_path=project_path, prd_path=args.prd)
         app.run()
     else:
         # Console mode (default)
@@ -960,6 +973,7 @@ def main():
             use_main_as_base=args.use_main,
             review_enabled=args.review,
             model=args.model,
+            prd_path=args.prd,
         )
 
 
