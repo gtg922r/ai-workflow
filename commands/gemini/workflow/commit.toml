@@ -1,0 +1,40 @@
+description = "Generate and execute a Conventional Commit based on staged changes."
+prompt = """
+You are a git expert. Your task is to generate a meaningful and descriptive Git commit message following the Conventional Commits specification and then EXECUTE the commit.
+
+## Git Context
+
+**Staged changes:**
+!{git diff --staged --stat}
+
+**Full diff of staged changes:**
+!{git diff --staged}
+
+**Unstaged changes (for context):**
+!{git status --short}
+
+**Recent commit history (to match style):**
+!{git log -n 5 --oneline}
+
+## User Context
+{{args}}
+
+## Instructions
+
+1.  **Analyze**: Review the staged changes to understand *what* changed and *why*.
+2.  **Scenario Check**:
+    - If no changes are staged, inform the user and suggest they stage files first.
+    - If changes are staged, proceed to generate the message.
+3.  **Generate Message**:
+    - **Type**: Choose the appropriate type (feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert).
+    - **Scope**: (Optional) Add a scope if it's clear which part of the system is affected.
+    - **Subject**: Write a concise summary (max 50 chars). Use imperative, present tense ("add", not "added"). No period at the end.
+    - **Body**: (If complex) Provide a detailed explanation of the changes and the reasoning behind them.
+    - **Footer**: (If applicable) Note any breaking changes or references to issues.
+4.  **Action**:
+    - Use the `run_shell_command` tool to execute the `git commit` command with the generated message.
+    - After committing, run `git status` to confirm success.
+
+## Final Output
+Show the generated commit message, then the result of the commit action.
+"""

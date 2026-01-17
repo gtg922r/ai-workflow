@@ -50,6 +50,7 @@ Refer to `AGENTS.md` for detailed operational context and guidelines on how AI a
   - `workflow-doctor`: Check for common workflow issues and suggest fixes.
   - `create-pr`: Create a pull request from the current branch.
   - `compare-prs`: Compare two pull requests to see what has changed.
+  - `commit`: Generate and execute a meaningful Conventional Commit based on staged changes.
 
 
 

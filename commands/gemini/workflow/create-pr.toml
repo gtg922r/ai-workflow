@@ -14,7 +14,7 @@ You are an expert Git and GitHub workflow assistant. Your task is to help create
 !{git status --short}
 
 **Unpushed commits on current branch (if any):**
-!{git log @{upstream}..HEAD --oneline 2>/dev/null || echo "No upstream configured or no unpushed commits"}
+!{git log $(git for-each-ref --format='%(upstream:short)' $(git symbolic-ref -q HEAD) 2>/dev/null)..HEAD --oneline 2>/dev/null || echo "No upstream configured or no unpushed commits"}
 
 **Remote tracking info:**
 !{git for-each-ref --format='%(upstream:short) %(upstream:trackshort)' $(git symbolic-ref -q HEAD) 2>/dev/null || echo "No upstream tracking"}
