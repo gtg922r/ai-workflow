@@ -196,3 +196,10 @@ Adjusted the UI rendering logic to ensure zero-margin alignment when timestamps 
 
 [2026-01-16 16:30:00] ✓ Story Completed [installer-npm-warning-fix]: Fix NPM Ignored Files Warning in Installer
 📋 Decision: Added explicit `.npmignore` files to the root and `scripts/runner-ralph/` to resolve the `gitignore-fallback` warning and exclude unnecessary development artifacts (like test files and caches) from the npm package.
+
+[2026-01-16 16:28:42] Run #7 [installer-npm-warning-fix]: ✓ Completed (129.8s)
+   Summary: <promise>COMPLETE</promise>
+
+[2026-01-16 16:28:42] 📋 Decision: Added explicit `.npmignore` files rather than relying on `files` in `package.json` alone, because npm produces the `gitignore-fallback` warning whenever a `.gitignore` is present without a corresponding `.npmignore`, regardless of the `files` array configuration.
+
+[2026-01-16 16:28:42] 💡 Learning: When a project is installed directly from a git repository (as recommended for this installer via `npx`), npm performs a pack operation. If no `.npmignore` is found, it uses `.gitignore` as a fallback but issues a warning. Adding even a basic `.npmignore` silences this and provides better control over the package contents.
