@@ -332,28 +332,13 @@ class GitManager:
         result = self._run_git("rev-parse", "HEAD")
         return result.stdout.strip()
 
-    def commit_story_completion(self, story_id: str, story_title: str) -> str | None:
-        """Stage and commit all changes for a completed story.
-
-        Args:
-            story_id: The story identifier
-            story_title: The story title for the commit message
-
-        Returns:
-            Commit hash if changes were committed, None otherwise
-        """
-        if not self.stage_all_changes():
-            self._log("No changes to commit for story completion", "ℹ️")
-            return None
-
-        message = f"feat({story_id}): {story_title}"
-        return self.commit(message)
-
-    def merge_to_main(self, delete_branch: bool = True) -> bool:
-        """Merge current story branch back to base branch.
+    def merge_to_main(self, delete_branch: bool = True, message: str | None = None) -> bool:
+        """Merge current story branch back to base branch using squash merge.
 
         Args:
             delete_branch: Whether to delete the story branch after merge
+            message: Optional commit message for the squash commit.
+                If not provided, uses the last commit message from the story branch.
 
         Returns:
             True if merge was successful
@@ -371,15 +356,34 @@ class GitManager:
         self._log(f"Merging {story_branch} to {self.base_branch}", "🔀")
 
         try:
+            # Check if there are any changes to merge
+            diff_check = self._run_git("rev-list", f"{self.base_branch}..{story_branch}")
+            if not diff_check.stdout.strip():
+                self._log(f"No changes to merge from {story_branch}", "ℹ️")
+                # Still switch back to base and cleanup
+                self._run_git("checkout", self.base_branch)
+                if delete_branch:
+                    self._run_git("branch", "-d", story_branch)
+                return True
+
+            # Get commit message if not provided
+            if not message:
+                result = self._run_git("log", "-1", "--pretty=%B", story_branch)
+                message = result.stdout.strip()
+
             # Switch to base branch
             self._run_git("checkout", self.base_branch)
 
-            # Merge the story branch
-            self._run_git("merge", story_branch, "--no-ff", "-m", f"Merge branch '{story_branch}'")
+            # Merge the story branch using squash
+            self._log(f"Squash merging {story_branch} into {self.base_branch}", "🗜️")
+            self._run_git("merge", "--squash", story_branch)
+
+            # git merge --squash doesn't commit, so we commit the staged changes
+            self._run_git("commit", "-m", message)
 
             if delete_branch:
                 self._log(f"Deleting branch {story_branch}", "🗑️")
-                self._run_git("branch", "-d", story_branch)
+                self._run_git("branch", "-D", story_branch)  # Use -D just in case
 
             return True
 

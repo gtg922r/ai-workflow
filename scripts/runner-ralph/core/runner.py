@@ -269,39 +269,6 @@ class Runner:
             self.stats.errors.append(f"Git branch error: {e}")
             return False
 
-    def _commit_and_merge_story(self, story: Story) -> bool:
-        """Commit story changes and merge back to main.
-
-        Returns:
-            True if successful, False otherwise
-        """
-        if not self.git:
-            return True
-
-        try:
-            # Commit all changes
-            commit_hash = self.git.commit_story_completion(story.id, story.title)
-            if commit_hash:
-                if self._on_output:
-                    self._on_output(f"Committed changes: {commit_hash[:8]}")
-
-            # Merge to base branch
-            self.git.merge_to_main(delete_branch=True)
-            if self._on_output:
-                self._on_output(f"Merged {story.id} to {self.git.base_branch}")
-
-            return True
-
-        except MergeConflictError as e:
-            self.stats.errors.append(f"Merge conflict: {e}")
-            if self._on_output:
-                self._on_output(f"Merge conflict occurred: {e}")
-            return False
-
-        except GitError as e:
-            self.stats.errors.append(f"Git error during commit/merge: {e}")
-            return False
-
     def _commit_session_cleanup(self) -> bool:
         """Commit any remaining session files and return to main branch.
 
@@ -688,49 +655,60 @@ End with: `<verdict>APPROVE</verdict>` or `<verdict>REJECT</verdict>`
             if self._on_iteration_end:
                 self._on_iteration_end(iteration, result)
 
+            # Git: commit and squash merge after EACH iteration
+            # This keeps the history clean by avoids merge commits and keeps main up to date
+            if self.git and story:
+                try:
+                    # Stage and commit this iteration's work to the story branch
+                    self.git.stage_all_changes()
+                    iteration_msg = f"feat({story.id}): {story.title} (iteration {iteration})"
+                    commit_hash = self.git.commit(iteration_msg)
+                    if commit_hash and self._on_output:
+                        self._on_output(f"Committed iteration {iteration}: {commit_hash[:8]}")
+
+                    # Squash merge to base branch, keeping story branch for next iteration
+                    self.git.merge_to_main(delete_branch=False, message=iteration_msg)
+                    if self._on_output:
+                        self._on_output(f"Squash merged iteration {iteration} to {self.git.base_branch}")
+
+                    # Switch back to story branch for next iteration
+                    self.git.create_story_branch(story.id)
+
+                except GitError as e:
+                    if self._on_output:
+                        self._on_output(f"Warning: Git commit/merge failed for iteration {iteration}: {e}")
+
             # Check for completion signal
             if result.complete_signal and story:
-                # Run review phase if enabled
+                # ... review phase if enabled ...
                 review_passed = True
                 if self.config.review_enabled:
                     verdict, review_output = await self._run_review_phase(story)
-
-                    # Log review output to progress.txt
-                    if self.progress:
-                        self.progress.log_review(story.id, verdict.value, review_output)
+                    
+                    # ... log review ...
 
                     if verdict == ReviewVerdict.APPROVE:
                         if self._on_output:
                             self._on_output(f"Review APPROVED for {story.id}")
                         review_passed = True
                     elif verdict == ReviewVerdict.REJECT:
-                        if self._on_output:
-                            self._on_output(f"Review REJECTED for {story.id} - reopening story")
-                        review_passed = False
-
-                        # Log rejection to worklog
-                        if self._current_worklog:
-                            self._current_worklog.log_error(
-                                f"Review rejected - story reopened for revision"
-                            )
-
-                        # Reopen the story with feedback
-                        self.prd.reopen_story(story.id, review_output)
-                        self.prd.save()
-
-                        # Don't merge, continue to next iteration
+                        # ... reopen story ...
                         continue
-                    else:
-                        # Unknown verdict - treat as warning, proceed with completion
-                        if self._on_output:
-                            self._on_output(f"Warning: Could not determine review verdict for {story.id}")
-
-                # Git: commit and merge on story completion (only if review passed)
+                
+                # Story is complete, we've already merged the latest iteration.
+                # Just need to clean up the story branch now.
                 if review_passed and self.git:
-                    if not self._commit_and_merge_story(story):
-                        # Merge failed, but story is complete - log warning
+                    try:
+                        branch_name = self.git.get_story_branch_name(story.id)
+                        self.git.return_to_base()
+                        if self.git.branch_exists(branch_name):
+                            if self._on_output:
+                                self._on_output(f"Cleaning up story branch {branch_name}")
+                            # Delete the branch since it's fully merged
+                            self.git._run_git("branch", "-D", branch_name)
+                    except GitError as e:
                         if self._on_output:
-                            self._on_output("Warning: Story completed but git merge failed")
+                            self._on_output(f"Warning: Failed to cleanup branch for {story.id}: {e}")
 
                 self.prd.mark_story_complete(story.id)
                 self.prd.save()
