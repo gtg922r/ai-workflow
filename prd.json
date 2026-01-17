@@ -92,7 +92,7 @@
         "The tool successfully loads and validates the PRD from the provided path.",
         "Defaults to `prd.json` in the current working directory if the flag is omitted."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "installer-npm-warning-fix",
@@ -103,7 +103,7 @@
         "Appropriate exclusion configuration (e.g., adding a .npmignore or using 'files' in package.json) is implemented.",
         "The package still correctly includes all necessary installation artifacts."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "ralph-story-selection",

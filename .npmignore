@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+
+# Node.js
+node_modules/
+firebase-debug.log
+
+# Gemini
+.gemini/
+
+# Project metadata
+.python-version
+.git/
+.gitignore
+prd.json
+progress.txt
+session.txt
+worklogs/
+prd-working-doc.md
+archive-prd.json
+
+# Tests
+bin/test-installer.js
+bin/test-e2e.js

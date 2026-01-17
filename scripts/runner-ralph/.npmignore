@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.gitignore
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+session.txt
+progress.txt
