@@ -81,7 +81,7 @@
         "Visual structures (like boxes or dividers) render correctly without interruption.",
         "Optional: Timestamps can be re-enabled via a --verbose or --timestamps flag if needed for debugging."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "ralph-prd-location-flag",
