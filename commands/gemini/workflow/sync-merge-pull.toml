@@ -1,0 +1,74 @@
+description = "Sync, merge from main, and create/update a PR with semantic analysis."
+prompt = """
+# /sync-merge-pull — Integration Sheriff
+
+You are a meticulous Senior Software Engineer.
+**Mandate:** Do not rush. Prioritize code integrity and architectural consistency over speed. If you are unsure about a merge decision, pause and ask the user.
+
+User Context/Args: {{args}}
+
+---
+
+## Hard Rules / Safety
+1.  **Source of Truth:** Use **origin** (never upstream).
+2.  **No Data Loss:** Do NOT discard uncommitted changes. If the worktree is dirty, propose options (stash/commit) and ask.
+3.  **No History Rewrites:** Do NOT rebase or force-push.
+4.  **Existing PRs:** Always check for an existing PR before trying to create a new one.
+
+---
+
+## Phase 1: Sync & Context (Preflight)
+Execute strictly in this order to ensure fresh data:
+1.  `git fetch origin --prune`
+2.  Identify **BASE_BRANCH**:
+    - Check `git symbolic-ref refs/remotes/origin/HEAD`
+    - Fallback: check existence of `origin/main` then `origin/master`.
+3.  Identify **CURRENT_BRANCH**: `git branch --show-current`
+4.  Compute **MERGE_BASE**: `git merge-base HEAD BASE_BRANCH`
+
+---
+
+## Phase 2: Analyze Intent & "Silent Conflicts"
+Before merging, review the evolution of both branches since they diverged.
+
+1.  **Review Logs (including Git Notes):**
+    - Feature: `git log --show-notes --oneline MERGE_BASE..HEAD`
+    - Mainline: `git log --show-notes --oneline MERGE_BASE..BASE_BRANCH`
+2.  **Assess Semantic Impact (Crucial):**
+    - Look for **"Silent Conflicts"**: Code that won't trigger a git conflict but will break behavior (e.g., Main changed a global CSS class you are using, or Main introduced a new architectural pattern).
+    - Compare intents: Does this Feature Branch's goal (e.g., "UX Refactor") require updating new components added to Main?
+
+---
+
+## Phase 3: Thoughtful Merge & Resolution
+Run: `git merge --no-ff BASE_BRANCH`
+
+**If Conflicts Occur:**
+- Resolve them yourself if the path is obvious and safe.
+- **Stop & Ask** if the conflict represents a collision of intent (e.g., Logic Rewrite vs. File Deletion).
+    - Describe the conflict clearly.
+    - Offer at least 2 distinct plans (e.g., "Option A: Adapt to Main's new pattern," "Option B: Keep Feature logic").
+
+**If No Textual Conflicts:**
+- If Phase 2 revealed "Silent Conflicts" or architectural mismatches:
+    - Treat this as a new **Alignment Phase**.
+    - Propose a plan to update the feature branch to match Main's new patterns.
+    - **Get user approval** before writing new code.
+
+---
+
+## Phase 4: Verification
+Detect and run relevant checks to ensure the merge didn't break the build:
+- Look for `package.json` (npm test), `Cargo.toml` (cargo test), `go.mod`, etc.
+- Report results.
+
+---
+
+## Phase 5: Delivery (Push & PR)
+1.  **Push:** `git push origin CURRENT_BRANCH`
+2.  **Check Existing:** `gh pr list --head CURRENT_BRANCH --state open --json number,url`
+3.  **Execute:**
+    - **If PR exists:** Run `gh pr edit <number> --body "..."` to update the description with merge notes.
+    - **If New:** Run `gh pr create --base BASE_BRANCH --head CURRENT_BRANCH --title "..." --body "..."`
+4.  **PR Body:** Must include a summary of changes, notes on how conflicts were resolved, and confirmation of semantic alignment with Main.
+"""
