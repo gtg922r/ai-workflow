@@ -88,7 +88,21 @@ uv run scripts/runner-ralph/ralph.py
 
 That's it! By default, Ralph runs in **console mode** with a polished CLI interface. `uv` automatically handles Python 3.11+, the virtual environment, and dependencies.
 
-### 5. Interactive TUI Mode
+### 5. Interactive Story Selection
+
+If you want to run only specific stories or control their execution order, use the `--select` flag:
+
+```bash
+uv run scripts/runner-ralph/ralph.py --select
+```
+
+This opens an interactive menu where you can:
+- Toggle stories using **Space** or **TAB**
+- Search for stories by typing (fuzzy search)
+- Define execution order by the sequence of selection
+- Confirm with **Enter**
+
+### 6. Interactive TUI Mode
 
 If you prefer a full interactive terminal UI, use the `--tui` flag:
 
@@ -265,6 +279,9 @@ uv run ralph.py --use-main --main-branch develop
 ### CLI Options
 
 ```bash
+# Interactively select stories to run (defines order)
+uv run ralph.py --select
+
 # Specify a custom PRD path
 uv run ralph.py --prd custom-prd.json
 uv run ralph.py -p custom-prd.json

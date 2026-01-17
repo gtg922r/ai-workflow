@@ -4,6 +4,7 @@
 # dependencies = [
 #     "textual>=0.47.0",
 #     "rich>=13.0.0",
+#     "InquirerPy>=0.3.4",
 # ]
 # ///
 """Runner Ralph - Autonomous AI Agent Runner.
@@ -27,6 +28,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from rich import print
 
 # Ensure local packages (agents/, core/) are importable when run from anywhere
 _script_dir = Path(__file__).parent.resolve()
@@ -239,6 +241,59 @@ class ConsoleRunner:
             )
 
 
+def select_stories(prd_path: Path) -> list[str]:
+    """Interactively select stories from the PRD.
+
+    Returns:
+        List of selected story IDs in the order they should be executed.
+    """
+    try:
+        from InquirerPy import inquirer
+    except ImportError:
+        print("Error: InquirerPy is required for interactive selection.")
+        print("Install it with: pip install InquirerPy")
+        sys.exit(1)
+
+    from core.prd import PRD
+
+    if not prd_path.exists():
+        print(f"Error: PRD not found at {prd_path}")
+        sys.exit(1)
+
+    try:
+        prd = PRD.load(prd_path)
+    except Exception as e:
+        print(f"Error loading PRD: {e}")
+        sys.exit(1)
+
+    if not prd.stories:
+        print("No stories found in PRD.")
+        sys.exit(0)
+
+    choices = []
+    for story in prd.stories:
+        status = " [DONE]" if story.passes else ""
+        choices.append({
+            "name": f"{story.id}: {story.title}{status}",
+            "value": story.id,
+            "enabled": not story.passes
+        })
+
+    print("\n[bold]Interactive Story Selection[/]")
+    print("Select the stories you want to run. The order of selection will define the execution order.")
+    print("Use [bold]TAB[/] to select/deselect stories, and [bold]ENTER[/] to confirm your selection.\n")
+
+    selected_ids = inquirer.fuzzy(
+        message="Select stories to run:",
+        choices=choices,
+        multiselect=True,
+        instruction="(TAB to select, ENTER to confirm)",
+        transformer=lambda result: f"{len(result)} stories selected",
+    ).execute()
+
+    return selected_ids
+
+
 def run_console_mode(
     project_path: Path,
     agent_type: AgentType,
@@ -252,6 +307,7 @@ def run_console_mode(
     review_enabled: bool = False,
     model: str | None = None,
     prd_path: Path | None = None,
+    selected_story_ids: list[str] | None = None,
 ) -> None:
     """Run the agent in simple console mode (no TUI)."""
     config = RunnerConfig(
@@ -266,6 +322,7 @@ def run_console_mode(
         review_enabled=review_enabled,
         model=model,
         prd_path=prd_path,
+        selected_story_ids=selected_story_ids or [],
     )
 
     runner = ConsoleRunner(
@@ -350,11 +407,13 @@ class ConfigScreen(ModalScreen[RunnerConfig | None]):
         project_path: Path,
         available_agents: list[tuple[AgentType, bool, str | None]],
         prd_path: Path | None = None,
+        selected_story_ids: list[str] | None = None,
     ):
         super().__init__()
         self.project_path = project_path
         self.available_agents = available_agents
         self.prd_path = prd_path
+        self.selected_story_ids = selected_story_ids or []
 
     def compose(self) -> ComposeResult:
         with Container(id="config-dialog"):
@@ -446,6 +505,7 @@ class ConfigScreen(ModalScreen[RunnerConfig | None]):
             auto_restart=restart_switch.value,
             review_enabled=review_switch.value,
             prd_path=self.prd_path,
+            selected_story_ids=self.selected_story_ids,
         )
 
         self.dismiss(config)
@@ -587,7 +647,7 @@ class RalphApp(App):
         Binding("c", "configure", "Configure"),
     ]
 
-    def __init__(self, project_path: Path | None = None, prd_path: Path | None = None):
+    def __init__(self, project_path: Path | None = None, prd_path: Path | None = None, selected_story_ids: list[str] | None = None):
         super().__init__()
         self.project_path = project_path or Path.cwd()
         self.prd_path = prd_path
@@ -596,6 +656,7 @@ class RalphApp(App):
         self._run_task: asyncio.Task | None = None
         self._current_story: Story | None = None
         self._history: list[tuple[int, AgentResult, Story | None]] = []
+        self.selected_story_ids = selected_story_ids or []
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -777,7 +838,7 @@ class RalphApp(App):
 
         # Show config screen
         config = await self.push_screen_wait(
-            ConfigScreen(self.project_path, available_agents, prd_path=self.prd_path)
+            ConfigScreen(self.project_path, available_agents, prd_path=self.prd_path, selected_story_ids=self.selected_story_ids)
         )
 
         if not config:
@@ -849,7 +910,7 @@ class RalphApp(App):
         available_agents = self.controller.get_available_agents()
 
         config = await self.push_screen_wait(
-            ConfigScreen(self.project_path, available_agents, prd_path=self.prd_path)
+            ConfigScreen(self.project_path, available_agents, prd_path=self.prd_path, selected_story_ids=self.selected_story_ids)
         )
 
         if config:
@@ -888,6 +949,11 @@ def main():
         "--tui",
         action="store_true",
         help="Run in interactive TUI mode",
+    )
+    parser.add_argument(
+        "--select",
+        action="store_true",
+        help="Interactively select stories to run",
     )
     parser.add_argument(
         "--agent",
@@ -953,10 +1019,18 @@ def main():
     args = parser.parse_args()
 
     project_path = args.path.resolve()
+    prd_path = args.prd or (project_path / "prd.json")
+
+    selected_story_ids = None
+    if args.select:
+        selected_story_ids = select_stories(prd_path)
+        if not selected_story_ids:
+            print("No stories selected. Exiting.")
+            sys.exit(0)
 
     if args.tui:
         # Full TUI mode
-        app = RalphApp(project_path=project_path, prd_path=args.prd)
+        app = RalphApp(project_path=project_path, prd_path=args.prd, selected_story_ids=selected_story_ids)
         app.run()
     else:
         # Console mode (default)
@@ -974,6 +1048,7 @@ def main():
             review_enabled=args.review,
             model=args.model,
             prd_path=args.prd,
+            selected_story_ids=selected_story_ids,
         )
 
 
