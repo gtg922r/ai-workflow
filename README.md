@@ -33,24 +33,32 @@ The interactive installer will guide you through:
 - **`commands/`**: Agent or provider-specific command specifications (e.g., `commands/gemini/`).
 - **`extensions/`**: Custom extensions (geminiCLI spec) to expand agent capabilities.
 - **`scripts/`**: Standalone tools and runners for AI workflows.
-- **`scripts/runner-ralph/`**: A TUI-based autonomous AI agent runner implementing the "Runner Ralph" loop pattern. Supports Claude Code CLI and Cursor CLI for PRD-driven development, including optional per-story feature specs.
 - **`skills/`**: Specialized skill definitions for agents.
-  - **`skills/command-creator/`**: Creates and manages custom commands (`.toml`) for the Gemini CLI, supporting reusable prompts, context-aware arguments, and dynamic shell execution.
-  - **`skills/skill-creator/`**: A meta-skill that helps an agent author new, spec-compliant Agent Skills (with progressive disclosure) and provides Gemini/Claude/Codex installation guidance.
-  - **`skills/runner-ralph/`**: Instructions for configuring and running the Runner Ralph autonomous development loop. Use when the user wants to start an automated coding session, configure a PRD, or understand how to use the runner script.
 - **`prompts/`**: A collection of reusable system and task-specific prompts.
 
-## Manual Usage
+## Available Skills
 
-Refer to `AGENTS.md` for detailed operational context and guidelines on how AI agents should interact with this repository.
+- **`command-creator`**: Creates and manages custom commands (`.toml`) for the Gemini CLI, supporting reusable prompts, context-aware arguments, and dynamic shell execution.
+- **`skill-creator`**: A meta-skill that helps an agent author new, spec-compliant Agent Skills and provides Gemini/Claude/Codex installation guidance.
+- **`runner-ralph`**: Instructions for configuring and running the Runner Ralph autonomous development loop. Use when the user wants to start an automated coding session, configure a PRD, or understand how to use the runner script.
 
 ## Available Commands
 
-### Gemini
-  - `workflow-doctor`: Check for common workflow issues and suggest fixes.
-  - `create-pr`: Create a pull request from the current branch.
-  - `compare-prs`: Compare two pull requests to see what has changed.
-  - `commit`: Generate and execute a meaningful Conventional Commit based on staged changes.
+### Gemini Workflow
+- `commit`: Generate and execute a meaningful Conventional Commit based on staged changes.
+- `create-pr`: Create a pull request from the current branch.
+- `compare-prs`: Compare two pull requests to see what has changed.
+- `sync-merge-pull`: Sync from origin, merge from the base branch (e.g., main), and create or update a PR with semantic analysis.
+- `workflow-doctor`: Check for common workflow issues (like missing API keys or misconfigurations) and suggest fixes.
+
+### Gemini Ralph
+- `add-to-prd`: Adds new user story/stories to `prd.json` with Senior PM analysis and git safety.
+
+## Autonomous Runners
+
+- **Runner Ralph (`scripts/runner-ralph/`)**: A TUI-based autonomous AI agent runner implementing the "Runner Ralph" loop pattern. Supports Claude Code CLI and Cursor CLI for PRD-driven development, including optional per-story feature specs.
+
+## Manual Usage
 
 
 
