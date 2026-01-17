@@ -78,7 +78,7 @@ Create your PRD file (`prd.json`):
 
 Optionally customize `prompt.md` and `AGENTS.md` for your project.
 
-### 4. Run the TUI
+### 4. Run the Agent
 
 From your project directory, run:
 
@@ -86,12 +86,28 @@ From your project directory, run:
 uv run scripts/runner-ralph/ralph.py
 ```
 
-That's it! `uv` automatically handles Python 3.11+, the virtual environment, and dependencies.
+That's it! By default, Ralph runs in **console mode** with a polished CLI interface. `uv` automatically handles Python 3.11+, the virtual environment, and dependencies.
 
-Or specify a different project path:
+### 5. Interactive Story Selection
+
+If you want to run only specific stories or control their execution order, use the `--select` flag:
 
 ```bash
-uv run scripts/runner-ralph/ralph.py --path /path/to/your/project
+uv run scripts/runner-ralph/ralph.py --select
+```
+
+This opens an interactive menu where you can:
+- Toggle stories using **Space** or **TAB**
+- Search for stories by typing (fuzzy search)
+- Define execution order by the sequence of selection
+- Confirm with **Enter**
+
+### 6. Interactive TUI Mode
+
+If you prefer a full interactive terminal UI, use the `--tui` flag:
+
+```bash
+uv run scripts/runner-ralph/ralph.py --tui
 ```
 
 **Alternative:** Make the script directly executable:
@@ -122,9 +138,10 @@ The TUI allows you to configure:
 - **Auto-restart** - Automatically restart when PRD is complete
 - **Review Phase** - Enable post-implementation code review before merging
 
-In console mode (`--no-tui`), you can also specify:
+In console mode (default), you can also specify:
 
 - **Model** (`--model`, `-m`) - Specific model to use (e.g., `claude-sonnet-4-20250514`)
+- **TUI Mode** (`--tui`) - Switch to the interactive terminal UI
 
 ## File Structure
 
@@ -238,7 +255,7 @@ By default, the runner uses your **current branch** as the base:
 ```bash
 # Example: working on a feature branch
 git checkout feature/my-work
-uv run ralph.py --no-tui
+uv run ralph.py
 
 # Story branches will be: ralph/story-1, ralph/story-2, etc.
 # All merges go back to feature/my-work
@@ -253,15 +270,26 @@ If you prefer to always branch from and merge to `main` (or another named branch
 
 ```bash
 # Force branching from main, regardless of current branch
-uv run ralph.py --no-tui --use-main
+uv run ralph.py --use-main
 
 # Combined with --main-branch for non-standard names
-uv run ralph.py --no-tui --use-main --main-branch develop
+uv run ralph.py --use-main --main-branch develop
 ```
 
 ### CLI Options
 
 ```bash
+# Interactively select stories to run (defines order)
+uv run ralph.py --select
+
+# Specify a custom PRD path
+uv run ralph.py --prd custom-prd.json
+uv run ralph.py -p custom-prd.json
+
+# Specify a custom project path (default: current directory)
+uv run ralph.py --path /path/to/project
+uv run ralph.py -d /path/to/project
+
 # Disable git management entirely
 uv run ralph.py --no-git
 
@@ -311,7 +339,7 @@ The review phase is an optional post-implementation step that critiques code bef
 
 ```bash
 # CLI flag
-uv run ralph.py --no-tui --review
+uv run ralph.py --review
 
 # Or enable in TUI configuration screen
 ```

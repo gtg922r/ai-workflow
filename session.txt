@@ -1,11 +1,29 @@
-Session: ralph-20260116-100245-beced7
-Started: 2026-01-16T10:02:45.972880
-Last Update: 2026-01-16T10:04:57.752659
-Total Runs: 2
+Session: ralph-20260116-155105-818221
+Started: 2026-01-16T15:51:05.906711
+Last Update: 2026-01-16T16:31:34.392803
+Total Runs: 8
 
 --- Run History ---
-✓ Run #1 [command-limerick] (49.2s)
-  ```
+✓ Run #1 [installer-defaults-refine] (123.0s)
+  <promise>COMPLETE</promise>
 
-✓ Run #2 [command-poem-5] (81.2s)
+✓ Run #2 [ralph-cli-default] (91.6s)
+  <promise>COMPLETE</promise>
+
+✓ Run #3 [workflow-doctor-api-keys] (51.4s)
+  <promise>COMPLETE</promise>
+
+✓ Run #4 [ralph-console-polish] (132.6s)
+  <promise>COMPLETE</promise>
+
+✓ Run #5 [ralph-prd-location-flag] (546.6s)
+  <promise>COMPLETE</promise>
+
+✗ Run #6 [installer-npm-warning-fix] (1173.3s)
+  ConnectError: [aborted] read ECONNRESET
+
+✓ Run #7 [installer-npm-warning-fix] (129.8s)
+  <promise>COMPLETE</promise>
+
+✓ Run #8 [ralph-story-selection] (171.1s)
   <promise>COMPLETE</promise>

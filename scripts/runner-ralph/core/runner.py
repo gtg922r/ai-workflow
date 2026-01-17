@@ -63,6 +63,7 @@ class RunnerConfig:
     use_main_as_base: bool = False  # If True, always branch from main; if False, use current branch
     review_enabled: bool = False  # Enable post-implementation review phase
     model: str | None = None  # Model to use (passed to agent CLI --model flag)
+    selected_story_ids: list[str] = field(default_factory=list)  # Specific stories to run
 
 
 @dataclass
@@ -584,14 +585,28 @@ End with: `<verdict>APPROVE</verdict>` or `<verdict>REJECT</verdict>`
         while iteration < self.config.max_iterations and not self._stop_requested:
             iteration += 1
 
-            # Check if PRD is complete
-            if self.prd and self.prd.is_complete:
+            # Get next story
+            story = None
+            if self.prd:
+                if self.config.selected_story_ids:
+                    # Find the first incomplete story from the selected list
+                    for story_id in self.config.selected_story_ids:
+                        s = self.prd.get_story_by_id(story_id)
+                        if s and not s.passes:
+                            story = s
+                            break
+                else:
+                    story = self.prd.get_next_incomplete_story()
+
+            # Check if we are done
+            if not story:
                 if self._on_output:
-                    self._on_output("All stories complete!")
+                    if self.config.selected_story_ids:
+                        self._on_output("All selected stories complete!")
+                    else:
+                        self._on_output("All stories complete!")
                 break
 
-            # Get next story
-            story = self.prd.get_next_incomplete_story() if self.prd else None
             self._current_story = story
 
             # Setup git branch and worklog for new story (only when story changes)

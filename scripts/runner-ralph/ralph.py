@@ -4,28 +4,31 @@
 # dependencies = [
 #     "textual>=0.47.0",
 #     "rich>=13.0.0",
+#     "InquirerPy>=0.3.4",
 # ]
 # ///
-"""Runner Ralph - TUI Application.
+"""Runner Ralph - Autonomous AI Agent Runner.
 
-A terminal user interface for running autonomous AI agent loops.
+A CLI application for running autonomous AI agent loops.
 
 Usage:
-    # TUI mode (default)
+    # Console mode (default)
     uv run scripts/runner-ralph/ralph.py
-    uv run scripts/runner-ralph/ralph.py --path /path/to/project
-
-    # Simple console mode (no TUI)
-    uv run scripts/runner-ralph/ralph.py --no-tui --agent cursor --iterations 3
+    uv run scripts/runner-ralph/ralph.py --agent cursor --iterations 3
 
     # Specify a model
-    uv run scripts/runner-ralph/ralph.py --no-tui --agent claude --model claude-sonnet-4-20250514
+    uv run scripts/runner-ralph/ralph.py --agent claude --model claude-sonnet-4-20250514
+
+    # Interactive TUI mode
+    uv run scripts/runner-ralph/ralph.py --tui
+    uv run scripts/runner-ralph/ralph.py --tui --path /path/to/project
 """
 
 from __future__ import annotations
 
 import sys
 from pathlib import Path
+from rich import print
 
 # Ensure local packages (agents/, core/) are importable when run from anywhere
 _script_dir = Path(__file__).parent.resolve()
@@ -50,13 +53,19 @@ class ConsoleRunner:
     """Enhanced console-based runner with polished UI output.
 
     Features:
-    - Timestamped log entries [HH:MM:SS]
+    - Timestamped log entries [HH:MM:SS] (optional)
     - Unicode symbols for state changes and results
     - Box-drawing characters for visual grouping
     - Improved layout for summaries and error messages
     """
 
-    def __init__(self, project_path: Path, config: RunnerConfig, verbose: bool = False):
+    def __init__(
+        self,
+        project_path: Path,
+        config: RunnerConfig,
+        verbose: bool = False,
+        show_timestamps: bool = False,
+    ):
         self.project_path = project_path
         self.config = config
         self.controller = RunnerController(project_path)
@@ -64,7 +73,10 @@ class ConsoleRunner:
 
         # Initialize the enhanced console UI
         from core.console import create_console_ui
-        self.ui = create_console_ui(show_timestamps=True, box_width=80)
+
+        # Enable timestamps if explicitly requested or in verbose mode
+        timestamps = show_timestamps or verbose
+        self.ui = create_console_ui(show_timestamps=timestamps, box_width=80)
 
     def _on_state_change(self, state: RunnerState) -> None:
         """Handle state change with styled output."""
@@ -229,17 +241,73 @@ class ConsoleRunner:
             )
 
 
+def select_stories(prd_path: Path) -> list[str]:
+    """Interactively select stories from the PRD.
+
+    Returns:
+        List of selected story IDs in the order they should be executed.
+    """
+    try:
+        from InquirerPy import inquirer
+    except ImportError:
+        print("Error: InquirerPy is required for interactive selection.")
+        print("Install it with: pip install InquirerPy")
+        sys.exit(1)
+
+    from core.prd import PRD
+
+    if not prd_path.exists():
+        print(f"Error: PRD not found at {prd_path}")
+        sys.exit(1)
+
+    try:
+        prd = PRD.load(prd_path)
+    except Exception as e:
+        print(f"Error loading PRD: {e}")
+        sys.exit(1)
+
+    if not prd.stories:
+        print("No stories found in PRD.")
+        sys.exit(0)
+
+    choices = []
+    for story in prd.stories:
+        status = " [DONE]" if story.passes else ""
+        choices.append({
+            "name": f"{story.id}: {story.title}{status}",
+            "value": story.id,
+            "enabled": not story.passes
+        })
+
+    print("\n[bold]Interactive Story Selection[/]")
+    print("Select the stories you want to run. The order of selection will define the execution order.")
+    print("Use [bold]TAB[/] to select/deselect stories, and [bold]ENTER[/] to confirm your selection.\n")
+
+    selected_ids = inquirer.fuzzy(
+        message="Select stories to run:",
+        choices=choices,
+        multiselect=True,
+        instruction="(TAB to select, ENTER to confirm)",
+        transformer=lambda result: f"{len(result)} stories selected",
+    ).execute()
+
+    return selected_ids
+
+
 def run_console_mode(
     project_path: Path,
     agent_type: AgentType,
     max_iterations: int,
     timeout: int,
     verbose: bool = False,
+    show_timestamps: bool = False,
     git_enabled: bool = True,
     main_branch: str = "main",
     use_main_as_base: bool = False,
     review_enabled: bool = False,
     model: str | None = None,
+    prd_path: Path | None = None,
+    selected_story_ids: list[str] | None = None,
 ) -> None:
     """Run the agent in simple console mode (no TUI)."""
     config = RunnerConfig(
@@ -253,9 +321,13 @@ def run_console_mode(
         use_main_as_base=use_main_as_base,
         review_enabled=review_enabled,
         model=model,
+        prd_path=prd_path,
+        selected_story_ids=selected_story_ids or [],
     )
 
-    runner = ConsoleRunner(project_path, config, verbose=verbose)
+    runner = ConsoleRunner(
+        project_path, config, verbose=verbose, show_timestamps=show_timestamps
+    )
     asyncio.run(runner.run())
 
 
@@ -334,10 +406,14 @@ class ConfigScreen(ModalScreen[RunnerConfig | None]):
         self,
         project_path: Path,
         available_agents: list[tuple[AgentType, bool, str | None]],
+        prd_path: Path | None = None,
+        selected_story_ids: list[str] | None = None,
     ):
         super().__init__()
         self.project_path = project_path
         self.available_agents = available_agents
+        self.prd_path = prd_path
+        self.selected_story_ids = selected_story_ids or []
 
     def compose(self) -> ComposeResult:
         with Container(id="config-dialog"):
@@ -428,6 +504,8 @@ class ConfigScreen(ModalScreen[RunnerConfig | None]):
             allow_network=network_switch.value,
             auto_restart=restart_switch.value,
             review_enabled=review_switch.value,
+            prd_path=self.prd_path,
+            selected_story_ids=self.selected_story_ids,
         )
 
         self.dismiss(config)
@@ -569,14 +647,16 @@ class RalphApp(App):
         Binding("c", "configure", "Configure"),
     ]
 
-    def __init__(self, project_path: Path | None = None):
+    def __init__(self, project_path: Path | None = None, prd_path: Path | None = None, selected_story_ids: list[str] | None = None):
         super().__init__()
         self.project_path = project_path or Path.cwd()
+        self.prd_path = prd_path
         self.controller = RunnerController(self.project_path)
         self.config: RunnerConfig | None = None
         self._run_task: asyncio.Task | None = None
         self._current_story: Story | None = None
         self._history: list[tuple[int, AgentResult, Story | None]] = []
+        self.selected_story_ids = selected_story_ids or []
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -630,7 +710,7 @@ class RalphApp(App):
 
     def _update_prd_display(self) -> None:
         """Update the PRD status display."""
-        prd_path = self.project_path / "prd.json"
+        prd_path = self.prd_path or (self.project_path / "prd.json")
         prd_status = self.query_one("#prd-status", Static)
         prd_progress = self.query_one("#prd-progress", ProgressBar)
 
@@ -645,7 +725,7 @@ class RalphApp(App):
             except Exception as e:
                 prd_status.update(f"Error loading PRD: {e}")
         else:
-            prd_status.update("No prd.json found")
+            prd_status.update(f"No {prd_path.name} found")
 
     def _update_state_display(self, state: RunnerState) -> None:
         """Update the state indicator."""
@@ -758,7 +838,7 @@ class RalphApp(App):
 
         # Show config screen
         config = await self.push_screen_wait(
-            ConfigScreen(self.project_path, available_agents)
+            ConfigScreen(self.project_path, available_agents, prd_path=self.prd_path, selected_story_ids=self.selected_story_ids)
         )
 
         if not config:
@@ -830,7 +910,7 @@ class RalphApp(App):
         available_agents = self.controller.get_available_agents()
 
         config = await self.push_screen_wait(
-            ConfigScreen(self.project_path, available_agents)
+            ConfigScreen(self.project_path, available_agents, prd_path=self.prd_path, selected_story_ids=self.selected_story_ids)
         )
 
         if config:
@@ -853,15 +933,27 @@ def main():
     )
     parser.add_argument(
         "--path",
-        "-p",
+        "-d",
         type=Path,
         default=Path.cwd(),
         help="Project path (default: current directory)",
     )
     parser.add_argument(
-        "--no-tui",
+        "--prd",
+        "-p",
+        type=Path,
+        default=None,
+        help="Path to the PRD JSON file (default: prd.json in project path)",
+    )
+    parser.add_argument(
+        "--tui",
         action="store_true",
-        help="Run in simple console mode without the TUI",
+        help="Run in interactive TUI mode",
+    )
+    parser.add_argument(
+        "--select",
+        action="store_true",
+        help="Interactively select stories to run",
     )
     parser.add_argument(
         "--agent",
@@ -890,6 +982,11 @@ def main():
         "-v",
         action="store_true",
         help="Show verbose output including full agent responses",
+    )
+    parser.add_argument(
+        "--timestamps",
+        action="store_true",
+        help="Show timestamps in console output",
     )
     parser.add_argument(
         "--no-git",
@@ -922,9 +1019,21 @@ def main():
     args = parser.parse_args()
 
     project_path = args.path.resolve()
+    prd_path = args.prd or (project_path / "prd.json")
 
-    if args.no_tui:
-        # Simple console mode
+    selected_story_ids = None
+    if args.select:
+        selected_story_ids = select_stories(prd_path)
+        if not selected_story_ids:
+            print("No stories selected. Exiting.")
+            sys.exit(0)
+
+    if args.tui:
+        # Full TUI mode
+        app = RalphApp(project_path=project_path, prd_path=args.prd, selected_story_ids=selected_story_ids)
+        app.run()
+    else:
+        # Console mode (default)
         agent_type = AgentType.CURSOR if args.agent == "cursor" else AgentType.CLAUDE
         run_console_mode(
             project_path=project_path,
@@ -932,16 +1041,15 @@ def main():
             max_iterations=args.iterations,
             timeout=args.timeout,
             verbose=args.verbose,
+            show_timestamps=args.timestamps,
             git_enabled=not args.no_git,
             main_branch=args.main_branch,
             use_main_as_base=args.use_main,
             review_enabled=args.review,
             model=args.model,
+            prd_path=args.prd,
+            selected_story_ids=selected_story_ids,
         )
-    else:
-        # Full TUI mode
-        app = RalphApp(project_path=project_path)
-        app.run()
 
 
 if __name__ == "__main__":

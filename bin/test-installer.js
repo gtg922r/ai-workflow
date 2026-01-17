@@ -107,7 +107,7 @@ const AGENTS = {
   'gemini-cli': {
     globalBase: path.join(os.homedir(), '.gemini'),
     localBase: '.gemini',
-    supports: ['commands', 'skills'],
+    supports: ['commands', 'skills', 'extensions'],
   },
   'claude-code': {
     globalBase: path.join(os.homedir(), '.claude'),
@@ -130,6 +130,7 @@ testSection('Installation Targets');
 
 test('Gemini supports commands', AGENTS['gemini-cli'].supports.includes('commands'));
 test('Gemini supports skills', AGENTS['gemini-cli'].supports.includes('skills'));
+test('Gemini supports extensions', AGENTS['gemini-cli'].supports.includes('extensions'));
 test('Claude supports skills', AGENTS['claude-code'].supports.includes('skills'));
 test('Codex supports skills', AGENTS['openai-codex'].supports.includes('skills'));
 

@@ -1,0 +1,42 @@
+{
+  "projectName": "ai-workflow",
+  "branchName": "main",
+  "userStories": [
+    {
+      "id": "command-poem-7",
+      "title": "Gemini Command: 7-Line Poem Generator",
+      "description": "Create a Gemini command that generates a 7-line poem about a specified topic.",
+      "acceptanceCriteria": [
+        "Command named `poem` added to `commands/gemini/creative/`.",
+        "Generates exactly 7 lines of poetry.",
+        "Takes a topic as a required argument.",
+        "Output is formatted as a clear, readable poem."
+      ],
+      "passes": false
+    },
+    {
+      "id": "command-haiku",
+      "title": "Gemini Command: Haiku Generator",
+      "description": "Create a Gemini command that generates a haiku (5-7-5 syllable structure) about a specified topic.",
+      "acceptanceCriteria": [
+        "Command named `haiku` added to `commands/gemini/creative/`.",
+        "Follows the traditional 5-7-5 syllable structure.",
+        "Takes a topic as a required argument.",
+        "Output is formatted on three lines."
+      ],
+      "passes": false
+    },
+    {
+      "id": "command-limerick",
+      "title": "Gemini Command: Limerick Generator",
+      "description": "Create a Gemini command that generates a humorous limerick about a specified topic.",
+      "acceptanceCriteria": [
+        "Command named `limerick` added to `commands/gemini/creative/`.",
+        "Follows the AABBA rhyme scheme and traditional rhythm of a limerick.",
+        "Takes a topic as a required argument.",
+        "Output is witty and topic-relevant."
+      ],
+      "passes": false
+    }
+  ]
+}

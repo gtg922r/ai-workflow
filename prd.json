@@ -3,42 +3,6 @@
   "branchName": "main",
   "userStories": [
     {
-      "id": "command-poem-7",
-      "title": "Gemini Command: 7-Line Poem Generator",
-      "description": "Create a Gemini command that generates a 7-line poem about a specified topic.",
-      "acceptanceCriteria": [
-        "Command named `poem` added to `commands/gemini/creative/`.",
-        "Generates exactly 7 lines of poetry.",
-        "Takes a topic as a required argument.",
-        "Output is formatted as a clear, readable poem."
-      ],
-      "passes": true
-    },
-    {
-      "id": "command-haiku",
-      "title": "Gemini Command: Haiku Generator",
-      "description": "Create a Gemini command that generates a haiku (5-7-5 syllable structure) about a specified topic.",
-      "acceptanceCriteria": [
-        "Command named `haiku` added to `commands/gemini/creative/`.",
-        "Follows the traditional 5-7-5 syllable structure.",
-        "Takes a topic as a required argument.",
-        "Output is formatted on three lines."
-      ],
-      "passes": true
-    },
-    {
-      "id": "command-limerick",
-      "title": "Gemini Command: Limerick Generator",
-      "description": "Create a Gemini command that generates a humorous limerick about a specified topic.",
-      "acceptanceCriteria": [
-        "Command named `limerick` added to `commands/gemini/creative/`.",
-        "Follows the AABBA rhyme scheme and traditional rhythm of a limerick.",
-        "Takes a topic as a required argument.",
-        "Output is witty and topic-relevant."
-      ],
-      "passes": true
-    },
-    {
       "id": "installer-defaults-refine",
       "title": "Refine Installer Defaults & Script Selection",
       "description": "Streamline the installation process by changing the default selections. Commands, Skills, and Extensions should be selected by default to encourage a complete setup. Scripts, being more specialized tools, should require explicit user selection via a granular list.",
@@ -48,7 +12,7 @@
         "Scripts are NOT selected by default in this list; the user must choose which ones they want.",
         "The installation summary correctly reflects the specific scripts chosen."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "ralph-cli-default",
@@ -59,7 +23,7 @@
         "The TUI mode is still accessible via a flag (e.g., --tui) if preserved, or removed if obsolete.",
         "The console interface maintains its visual polish (Rich-based formatting)."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "workflow-doctor-api-keys",
@@ -70,7 +34,7 @@
         "The tool suggests using the agent's built-in auth flow (e.g., firebase login, claude auth) as the primary resolution.",
         "The overall doctor status remains 'healthy' if only API keys are missing."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "ralph-console-polish",
@@ -81,7 +45,7 @@
         "Visual structures (like boxes or dividers) render correctly without interruption.",
         "Optional: Timestamps can be re-enabled via a --verbose or --timestamps flag if needed for debugging."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "ralph-prd-location-flag",
@@ -92,7 +56,7 @@
         "The tool successfully loads and validates the PRD from the provided path.",
         "Defaults to `prd.json` in the current working directory if the flag is omitted."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "installer-npm-warning-fix",
@@ -103,7 +67,7 @@
         "Appropriate exclusion configuration (e.g., adding a .npmignore or using 'files' in package.json) is implemented.",
         "The package still correctly includes all necessary installation artifacts."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "ralph-story-selection",
@@ -115,7 +79,7 @@
         "The tool processes only the selected stories in the specified or defined order.",
         "Default behavior (run all in order) is maintained when the `--select` flag is omitted."
       ],
-      "passes": false
+      "passes": true
     }
   ]
 }
