@@ -80,6 +80,39 @@
         "Default behavior (run all in order) is maintained when the `--select` flag is omitted."
       ],
       "passes": true
+    },
+    {
+      "id": "ralph-remove-tui",
+      "title": "Remove Obsolete TUI Code from Runner Ralph",
+      "description": "Completely remove the heavy-weight TUI implementation and its associated CLI flags from Runner Ralph, streamlining the codebase and focusing on the polished console/CLI interface.",
+      "acceptanceCriteria": [
+        "All TUI-related code and dependencies (e.g., Textual) are removed from the codebase.",
+        "The `--tui` CLI flag is removed.",
+        "Runner Ralph functions correctly using only the console interface as the sole mode of operation.",
+        "Documentation and help text are updated to reflect the removal of TUI mode."
+      ]
+    },
+    {
+      "id": "ralph-agent-streaming",
+      "title": "Implement Streaming Agent Output in Runner Ralph",
+      "description": "Enhance real-time feedback by implementing streaming support for agent output utilizing streaming-json options. Reference: https://code.claude.com/docs/en/headless and https://cursor.com/docs/cli/headless",
+      "acceptanceCriteria": [
+        "Integrate streaming-json/headless options for supported agents (Claude, Cursor).",
+        "Display a scrolling status section showing only the last 3-4 lines of agent output.",
+        "The status indicator remains compact and does not fill the entire console.",
+        "Streaming handles partial JSON chunks correctly to maintain data integrity."
+      ]
+    },
+    {
+      "id": "ralph-gemini-support",
+      "title": "Add Gemini CLI Agent Support to Runner Ralph",
+      "description": "Expand Runner Ralph's agent compatibility by adding support for the Gemini CLI agent (https://geminicli.com/docs/cli/headless/).",
+      "acceptanceCriteria": [
+        "A new agent adapter for Gemini CLI is implemented in `scripts/runner-ralph/agents/`.",
+        "Support for Gemini CLI's headless mode is integrated.",
+        "The Gemini agent is correctly registered and selectable via the PRD configuration.",
+        "The adapter correctly handles Gemini CLI's output and error formats."
+      ]
     }
   ]
 }
