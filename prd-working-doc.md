@@ -1,8 +1,8 @@
 - get rid of the heavy-weight TUI in runner-ralph entirely - get rid of the --tui option and its associated code
-- Add support for streaming from model
+- Add support for streaming from agent utilizing streaming-json options
   - https://code.claude.com/docs/en/headless
   - https://cursor.com/docs/cli/headless
-  - Should show the last 3-4 lines in a scrolling section - basically as a status indicator that the agent is working. don't fill up the whole console - only show the last few lines
+  - Should show the last 3-4 lines in a scrolling section - basically as a status indicator that the agent is working. don't fill up the whole console - only show the last few lines. 
 - add support for gemini-cli agent in runner-ralph (https://geminicli.com/docs/cli/headless/)
 - use more conductor like tracks with phases, have a planner run first, have it report out along each of the phases. 
 - got a error without much input. see if can get better support:
