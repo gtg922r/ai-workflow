@@ -72,13 +72,6 @@ Best for monitoring progress in real-time.
 uv run scripts/runner-ralph/ralph.py
 ```
 
-### Headless / Console Mode
-Best for scripts or background execution.
-
-```bash
-uv run scripts/runner-ralph/ralph.py
-```
-
 ### Key Flags
 
 | Flag | Description | Example |
@@ -86,6 +79,7 @@ uv run scripts/runner-ralph/ralph.py
 | `--path` | Path to project root (default: current dir) | `--path /path/to/project` |
 | `--agent` | Agent backend (`cursor` or `claude`) | `--agent cursor` |
 | `--model` | Specific model to use | `--model claude-sonnet-4-20250514` |
+| `--prd` | Path to PRD file (default: `prd.json`) | `--prd test-prd.json` |
 | `--iterations` | Max number of iterations | `--iterations 5` |
 | `--review` | Enable post-implementation code review | `--review` |
 | `--no-git` | Disable git branching/commits | `--no-git` |

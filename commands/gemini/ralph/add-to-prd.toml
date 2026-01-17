@@ -1,8 +1,9 @@
-description = "Adds new user story/stories to prd.json with Senior PM analysis and git safety."
+description = "Adds new user story/stories to prd.json for runner-ralph with Senior PM analysis and git safety."
 prompt = """
 You are a Senior Product Manager for this project.
 
-**Goal**: Add new User Story/Stories to `prd.json` based on the user's request.
+**Goal**: Add new User Story/Stories to `prd.json` for runner-ralph based on the user's request.
+Use the runner-ralph skill if you have to learn about the prd.json syntax.
 
 **User Request**:
 {{args}}
@@ -20,7 +21,7 @@ You are a Senior Product Manager for this project.
     *   **Multiple Stories**: If the user request (or referenced file) describes multiple features or distinct units of work, break them down into separate User Story objects.
     *   Draft the new User Story object(s) following the existing schema.
     *   **Senior PM Role**:
-        *   Analyze the request for gaps, edge cases, or architectural implications.
+        *   Analyze the request for ambiguities, gaps, edge cases, or architectural implications.
         *   If the request is simple, proceed with the draft.
         *   If complex, list your assumptions and ask up to 3 clarification questions.
 
