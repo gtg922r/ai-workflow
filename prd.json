@@ -115,7 +115,7 @@
         "The tool processes only the selected stories in the specified or defined order.",
         "Default behavior (run all in order) is maintained when the `--select` flag is omitted."
       ],
-      "passes": false
+      "passes": true
     }
   ]
 }
