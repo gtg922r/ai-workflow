@@ -1,7 +1,7 @@
 Session: ralph-20260116-155105-818221
 Started: 2026-01-16T15:51:05.906711
-Last Update: 2026-01-16T16:28:42.038170
-Total Runs: 7
+Last Update: 2026-01-16T16:31:34.392803
+Total Runs: 8
 
 --- Run History ---
 ✓ Run #1 [installer-defaults-refine] (123.0s)
@@ -23,4 +23,7 @@ Total Runs: 7
   ConnectError: [aborted] read ECONNRESET
 
 ✓ Run #7 [installer-npm-warning-fix] (129.8s)
+  <promise>COMPLETE</promise>
+
+✓ Run #8 [ralph-story-selection] (171.1s)
   <promise>COMPLETE</promise>

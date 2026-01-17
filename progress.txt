@@ -203,3 +203,10 @@ Adjusted the UI rendering logic to ensure zero-margin alignment when timestamps 
 [2026-01-16 16:28:42] 📋 Decision: Added explicit `.npmignore` files rather than relying on `files` in `package.json` alone, because npm produces the `gitignore-fallback` warning whenever a `.gitignore` is present without a corresponding `.npmignore`, regardless of the `files` array configuration.
 
 [2026-01-16 16:28:42] 💡 Learning: When a project is installed directly from a git repository (as recommended for this installer via `npx`), npm performs a pack operation. If no `.npmignore` is found, it uses `.gitignore` as a fallback but issues a warning. Adding even a basic `.npmignore` silences this and provides better control over the package contents.
+
+[2026-01-16 16:28:42] ✓ Story Completed [installer-npm-warning-fix]: Fix NPM Ignored Files Warning in Installer
+📋 Decision: Added explicit `.npmignore` files rather than relying on `files` in `package.json` alone, because npm produces the `gitignore-fallback` warning whenever a `.gitignore` is present without a corresponding `.npmignore`, regardless of the `files` array configuration.
+💡 Learning: When a project is installed directly from a git repository (as recommended for this installer via `npx`), npm performs a pack operation. If no `.npmignore` is found, it uses `.gitignore` as a fallback but issues a warning. Adding even a basic `.npmignore` silences this and provides better control over the package contents.
+
+[2026-01-16 16:31:34] Run #8 [ralph-story-selection]: ✓ Completed (171.1s)
+   Summary: <promise>COMPLETE</promise>
